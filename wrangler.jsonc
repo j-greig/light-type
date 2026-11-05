@@ -1,0 +1,17 @@
+{
+  "name": "light-type",
+  "main": "worker/src/index.js",
+  "compatibility_date": "2025-09-01",
+  "account_id": "642ba4f869974826a8e27df7eb995090",
+  "assets": {
+    "directory": "./public",
+    "binding": "ASSETS",
+    "run_worker_first": true,
+    "not_found_handling": "single-page-application"
+  },
+  "durable_objects": {
+    "bindings": [{ "name": "CHANNEL", "class_name": "Channel" }]
+  },
+  "migrations": [{ "tag": "v1", "new_sqlite_classes": ["Channel"] }],
+  "routes": [{ "pattern": "light.wibandwob.com", "custom_domain": true }]
+}

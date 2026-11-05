@@ -1,0 +1,145 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Light Type</title>
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta name="description" content="Turns a phone into a print head for a long-exposure light drawing. Many phones, one beat.">
+<meta name="theme-color" content="#000000">
+<meta name="color-scheme" content="dark">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Light Type">
+<meta name="format-detection" content="telephone=no">
+<link rel="manifest" href="/manifest.webmanifest">
+<link rel="apple-touch-icon" href="/icons/apple-touch-icon.png">
+<link rel="icon" type="image/png" sizes="192x192" href="/icons/icon-192.png">
+<link rel="preload" href="/fonts/Px437_IBM_VGA_9x16.ttf" as="font" type="font/ttf" crossorigin>
+<link rel="stylesheet" href="/style.css">
+</head>
+<body>
+
+<!-- ARM: every launch. The tap unlocks sound and keeps the screen awake. -->
+<section id="arm" class="screen">
+  <button id="armBtn" class="arm-btn" type="button">
+    <span class="arm-big">TAP<br>TO<br>ARM</span>
+    <span class="arm-small">sound on · screen stays awake</span>
+  </button>
+</section>
+
+<!-- DIAL: pick a channel, check the words, press START. -->
+<main id="dial" class="screen" hidden>
+  <div class="topbar">
+    <span id="dot" class="dot off" aria-label="offline"></span>
+    <span id="here" class="here">offline</span>
+    <span id="sync" class="sync">sync …</span>
+  </div>
+
+  <section class="channel" aria-label="Channel">
+    <div class="ch-label">CHANNEL</div>
+    <div class="ch-row">
+      <button id="chDown" class="ch-step" type="button" aria-label="Previous channel">−</button>
+      <input id="chNum" class="ch-num" type="text" inputmode="numeric" pattern="[0-9]*" maxlength="2" value="1" aria-label="Channel number">
+      <button id="chUp" class="ch-step" type="button" aria-label="Next channel">+</button>
+    </div>
+    <div id="chName" class="ch-name">THE VERSE</div>
+  </section>
+
+  <section class="words">
+    <textarea id="text" rows="3" spellcheck="false" autocapitalize="characters" autocomplete="off" maxlength="200" aria-label="The words, up to 3 lines"></textarea>
+    <div id="textNote" class="note"></div>
+  </section>
+
+  <section class="formation">
+    <div class="seg" role="group" aria-label="Formation">
+      <button id="fOne" type="button" aria-pressed="true">ONE WALKER</button>
+      <button id="fTog" type="button" aria-pressed="false">TOGETHER</button>
+    </div>
+    <div id="fNote" class="note">Lines one after another. Walk back in the dark between them.</div>
+    <div id="partRow" class="part-row" hidden>
+      <span class="part-label">MY LINE</span>
+      <div class="seg" id="partSeg" role="group" aria-label="My line"></div>
+    </div>
+  </section>
+
+  <section class="go">
+    <button id="startBtn" class="start" type="button">START</button>
+    <div id="runRow" class="run-row" hidden>
+      <button id="rejoinBtn" class="btn" type="button">REJOIN</button>
+      <button id="stopBtn" class="btn warn" type="button">STOP FOR ALL</button>
+    </div>
+    <div id="startNote" class="note"></div>
+  </section>
+
+  <section class="conduct">
+    <button id="conductBtn" class="btn ghost wide" type="button" aria-pressed="false">I'M CONDUCTING THIS CHANNEL</button>
+    <label class="field"><span>MY NAME (optional)</span>
+      <input id="name" type="text" maxlength="24" autocomplete="off" spellcheck="false" placeholder="shown when conducting"></label>
+  </section>
+
+  <section>
+    <div class="h">THE PHONE, KNOT BY KNOT</div>
+    <div id="phones" class="phones"></div>
+  </section>
+
+  <details id="settings">
+    <summary>SETTINGS</summary>
+    <div class="grid">
+      <label class="field"><span>STEPS PER MINUTE</span><input id="bpm" type="number" inputmode="numeric" min="20" max="120" step="5"></label>
+      <label class="field"><span>FLASH, MS</span><input id="flash" type="number" inputmode="numeric" min="40" max="1000" step="20"></label>
+      <label class="field"><span>WALK BACK, S</span><input id="walkback" type="number" inputmode="numeric" min="0" max="30" step="1"></label>
+      <label class="field"><span>COLOUR</span>
+        <select id="colour">
+          <option value="white">white</option>
+          <option value="warm">warm</option>
+          <option value="yellow">yellow</option>
+          <option value="cyan">cyan</option>
+          <option value="magenta">magenta</option>
+          <option value="cycle">cycle</option>
+        </select></label>
+      <label class="check"><input id="caps" type="checkbox"> ALL CAPS</label>
+    </div>
+    <div class="note">The settings above are shared by every phone on this channel.</div>
+    <div class="grid">
+      <label class="field"><span>LETTER SIZE %</span><input id="size" type="number" inputmode="numeric" min="20" max="100" step="5"></label>
+      <label class="field"><span>LIGHT LEVEL %</span><input id="level" type="number" inputmode="numeric" min="5" max="100" step="5"></label>
+    </div>
+    <div class="note">Letter size and light level are for this phone only. Set the phone's own brightness too.</div>
+  </details>
+
+  <section class="share">
+    <div class="h">SHARE THIS CHANNEL</div>
+    <div id="shareUrl" class="share-url"></div>
+    <div id="qr" class="qr" aria-label="QR code for this channel"></div>
+  </section>
+
+  <section class="solo">
+    <button id="soloBtn" class="btn ghost wide" type="button">SOLO STEP (this phone only)</button>
+    <div class="note">Press and hold to light each letter. Not synced.</div>
+  </section>
+
+  <section class="help">
+    <div class="h">HOW</div>
+    <ol>
+      <li>Everyone opens the same channel and taps ARM.</li>
+      <li>Photographer: tripod, bulb, remote. Open the shutter on the long low beep after 1.</li>
+      <li>Walker: stand at the first knot, screen to the lens. Step on each click.</li>
+      <li>Close the shutter on the two-note end tone.</li>
+      <li>To leave the black screen: hold a finger down for 3 seconds.</li>
+    </ol>
+  </section>
+</main>
+
+<!-- RUN: the print head. Black, one glyph. -->
+<div id="stage" hidden><canvas id="gc"></canvas></div>
+
+<div id="toast" class="toast" hidden></div>
+
+<!-- keeps the screen awake on iOS versions without the Wake Lock API -->
+<video id="wakeVid" src="/wake.mp4" muted playsinline loop preload="auto" aria-hidden="true"></video>
+
+<script src="/vendor/qrcode.js"></script>
+<script src="/app.js"></script>
+</body>
+</html>
