@@ -51,7 +51,7 @@ Channels 1 and 2 seed `text` with the verse (2 without the face), `locked: true`
 | `ping` | `c` (client ms) | server replies `pong` |
 | `set` | `text` | refused on a locked channel (`code:"locked"`) |
 | `settings` | partial `settings` object | merged, clamped |
-| `start` | | `run = {startAt: now + 5000 + 400, ...snapshot}`; broadcast `run` |
+| `start` | `at` (optional, server ms) | `run = {startAt: at or now + 5400, ...snapshot}`; `at` must be 5 s to 6 h ahead, else ignored; broadcast `run` |
 | `stop` | | `run = null`; broadcast `stop` |
 | `conduct` | `on` (bool), `name` | `on:true` takes the baton if `conductor` is null or is this id; `on:false` releases it if held by this id |
 
@@ -119,3 +119,14 @@ No flaw in the contract; these clarify what the server does.
 - A conductor with no open socket for 30 min is released automatically, with a `state` broadcast. Reconnecting with the same id before then keeps the baton.
 - `GET /api/state?ch=N` returns the channel state plus `now` and `here`.
 - The Worker runs first for every request (`run_worker_first`), so `/`, `/index.html`, `/sw.js`, `/manifest.webmanifest` carry `Cache-Control: no-cache`.
+
+## Scheduled and offline runs (client)
+
+- A `start` with `at` schedules the run. Phones store the run and the clock offset in localStorage,
+  so a phone that leaves the network still plays the run at `startAt` (its clock offset is kept).
+  The stage goes black 7 s before `startAt`; until then the dial shows the time and a countdown.
+- ON THE MINUTE: `at` = the next whole minute of server time, at least 15 s ahead. With no signal
+  the phone computes the same minute from its saved offset and runs locally, so phones started on
+  the same minute line up without a network.
+- With no signal, START runs on this phone only, from the cached or locally edited text. Channels 1
+  and 2 have their text built into the client.

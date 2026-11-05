@@ -18,8 +18,30 @@ into the same exposure.
 
 ## On an iPhone
 
-Open the link in Safari, Share > Add to Home Screen, open it from the Home Screen (fullscreen). Tap to arm
-(this turns sound on and keeps the screen awake). Turn the phone's brightness up and Silent mode off.
+The app guides each step on screen:
+
+1. **Home Screen.** Opened in Safari, it shows how to add itself: ⋯ or Share › Add to Home Screen ›
+   Open as Web App on › Add. From the Home Screen it opens fullscreen with no browser bar to glow in the photo.
+2. **Arm.** Tap once per launch: sound on, screen kept awake.
+3. **Before the dark** (once per phone): rotation lock on, Do Not Disturb, brightness up with
+   Auto-Brightness off, Silent mode off (with a test sound), black tape or a thumb over the clock at the top
+   (the status bar stays lit and prints into the photo), Auto-Lock as a backstop. Hold to test the light.
+4. The row under the top bar shows what the phone can confirm itself: SOUND, AWAKE, UPRIGHT, APP, SAVED.
+
+## No signal outside
+
+- Open the app once on the wifi: the app and the channel's words are saved on the phone.
+- **Start at a set time:** on the wifi, set START AT for all. Every phone on the channel keeps the time and
+  runs it at that moment with no signal. Keep the app open with the screen on.
+- **On the next minute:** with or without signal, phones that tap START ON THE NEXT MINUTE in the same minute
+  start together on the next :00 (their clocks were lined up with the server while online).
+- With no signal, START runs on that phone alone, and words typed on an open channel stay on the phone.
+
+## During a run
+
+- The screen is black except for the letter. Messages never draw over it.
+- It stays black for 6 s after the end tone (3 s after a stop), so nothing lights the photo while the shutter closes.
+- A thumb resting on the glass does nothing. To leave early, hold two fingers on the screen for 2 s.
 
 ## For the photographer
 

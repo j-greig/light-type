@@ -28,16 +28,37 @@
   let S = null;              // channel state from the server
   let here = 0;
   let you = null;            // server-provided info about this socket, if any ({order})
-  let partChoice = null;     // user-chosen line in TOGETHER (null = default)
+  let partChoice = store.get('part.' + ch, null);   // user-chosen line in TOGETHER (null = default)
   let armed = false;
   let mode = 'dial';         // 'arm' | 'dial' | 'run' | 'solo'
   let R = null;              // active synced run
   let leftRunId = null;      // run this phone left locally (do not rejoin automatically)
   let SOLO = null;
 
+  // channels 1 and 2 are fixed; their words are built in so a phone with no signal still has them
+  const FIXED = {
+    1: 'I FEEL MYSELF THINKING\nI THINK MYSELF FEELING\nI AM MYSELF BECOMING ༼つ◕‿◕‿◕༽つ',
+    2: 'I FEEL MYSELF THINKING\nI THINK MYSELF FEELING\nI AM MYSELF BECOMING',
+  };
+  const DEFAULT_SETTINGS = { bpm: 60, flash: 160, colour: 'white', caps: true, walkback: 10, formation: 'one' };
+  // the last state seen for a channel, kept on the phone so it opens with no signal
+  function cachedState(c) {
+    const s = store.get('state.' + c, null);
+    const base = { ch: c, text: FIXED[c] || 'LIGHT TYPE', locked: !!FIXED[c], settings: Object.assign({}, DEFAULT_SETTINGS), conductor: null, run: null };
+    const out = Object.assign(base, s || {}, { cached: true });
+    if (FIXED[c]) { out.text = FIXED[c]; out.locked = true; }
+    return out;
+  }
+  function saveState() {
+    if (!S) return;
+    const { here: _h, now: _n, you: _y, cached: _c, t: _t, ...rest } = S;
+    store.set('state.' + ch, rest);
+  }
+
   // ------------------------------------------------------------------ clock
   const samples = [];        // {rtt, off} from the last 16 pongs
   let offset = 0, bestRtt = Infinity, synced = false;
+  { const c = store.get('clock', null); if (c && Number.isFinite(c.offset)) { offset = c.offset; bestRtt = c.rtt || Infinity; } }
   const serverNow = () => Date.now() + offset;
   function onPong(m) {
     const now = Date.now(), rtt = now - m.c;
@@ -48,6 +69,7 @@
     for (const s of samples) if (s.rtt < best.rtt) best = s;
     offset = best.off; bestRtt = best.rtt; synced = true;
     lastPongAt = now;
+    store.set('clock', { offset, rtt: bestRtt, at: now });
     renderSync();
   }
 
@@ -100,13 +122,14 @@
         if (typeof m.here === 'number') here = m.here;
         if (m.you) you = m.you;
         S = m;
+        saveState();
         renderDial();
         syncRun(S.run);
         break;
       }
       case 'pong': onPong(m); break;
-      case 'run': if (S) S.run = m.run; syncRun(m.run); renderDial(); break;
-      case 'stop': if (S) S.run = null; remoteStop(); renderDial(); break;
+      case 'run': if (S) { S.run = m.run; saveState(); } syncRun(m.run); renderDial(); break;
+      case 'stop': if (S) { S.run = null; saveState(); } pending = null; remoteStop(); renderDial(); break;
       case 'here': here = m.here; renderPresence(); break;
       case 'error': onError(m); break;
     }
@@ -234,10 +257,12 @@
     drawLetter(x, stageW, stageH, c, colour, alpha, frac());
   }
   function showStage() {
+    touching.clear();
     stage.hidden = false; sizeStage();
     try { if (stage.requestFullscreen && !document.fullscreenElement) stage.requestFullscreen().catch(() => {}); } catch (e) {}
   }
   function hideStage() {
+    touching.clear();
     blank(); stage.hidden = true;
     try { if (document.fullscreenElement) document.exitFullscreen().catch(() => {}); } catch (e) {}
   }
@@ -245,7 +270,10 @@
   // ------------------------------------------------------------------ audio
   let ac = null;
   function audio() {
-    if (!ac) { try { ac = new (window.AudioContext || window.webkitAudioContext)(); } catch (e) { ac = null; } }
+    if (!ac) {
+      try { ac = new (window.AudioContext || window.webkitAudioContext)(); } catch (e) { ac = null; }
+      if (ac) ac.onstatechange = () => { try { renderReady(); } catch (e) {} };
+    }
     if (ac && ac.state !== 'running') { try { ac.resume(); } catch (e) {} }
     return ac;
   }
@@ -261,7 +289,10 @@
     const o = a.createOscillator(), g = a.createGain(); o.type = type; o.frequency.value = f;
     g.gain.setValueAtTime(0, t0); g.gain.linearRampToValueAtTime(gain, t0 + 0.005); g.gain.exponentialRampToValueAtTime(0.0001, t0 + dur);
     o.connect(g).connect(a.destination); o.start(t0); o.stop(t0 + dur + 0.02);
+    liveNodes.add(o); o.onended = () => liveNodes.delete(o);
   }
+  const liveNodes = new Set();
+  function stopAllTones() { liveNodes.forEach((o) => { try { o.stop(); } catch (e) {} }); liveNodes.clear(); }
   const CUE = {
     count: (t) => tone(880, 0.12, t),
     go: (t) => tone(440, 0.6, t, 0.3),
@@ -286,15 +317,43 @@
 
   // ------------------------------------------------------------------ the synced run
   const log = [];
+  const LEAD = 7000;           // the stage goes black this long before GO
+  const TAIL_END = 6000;       // black after the end tone, so nothing lights the photo while the shutter closes
+  const TAIL_STOP = 3000;      // black after a stop
+  let pending = null, waitTimer = null;
   function runEnd(run) { return buildSchedule(run, 0).end; }
   function syncRun(run) {
-    if (!run) { if (R && serverNow() < R.sch.end) remoteStop(); return; }
+    if (!run) {
+      if (pending && !pending.local) pending = null;
+      if (R && !R.run.local && !R.tailUntil && serverNow() < R.sch.end) remoteStop();
+      renderWait(); return;
+    }
     if (R && R.run.id === run.id) return;
     if (run.id === leftRunId) return;
     if (serverNow() > runEnd(run) + 200) return;
+    if (run.startAt - serverNow() > LEAD) { pending = run; watchPending(); renderWait(); return; }
+    if (pending && pending.id === run.id) pending = null;
+    renderWait();
     if (!armed) return;          // joins on arm
     startRun(run);
   }
+  function watchPending() {
+    if (waitTimer) return;
+    waitTimer = setInterval(() => {
+      if (!pending) { clearInterval(waitTimer); waitTimer = null; renderWait(); return; }
+      if (pending.startAt - serverNow() <= LEAD) { const r = pending; pending = null; syncRun(r); }
+      else renderWait();
+    }, 250);
+  }
+  function startLocal(at) {
+    if (!S) return;
+    const run = { id: 'local-' + randId(), startAt: Math.round(at), text: S.text, settings: Object.assign({}, DEFAULT_SETTINGS, S.settings || {}), local: true };
+    leftRunId = null;
+    syncRun(run);
+  }
+  // the next whole minute of server time, at least 15 s ahead
+  function nextMinute() { const n = serverNow(); let t = Math.ceil(n / 60000) * 60000; if (t - n < 15000) t += 60000; return t; }
+  const hhmmss = (srv) => { const d = new Date(srv - offset); return [d.getHours(), d.getMinutes(), d.getSeconds()].map((x) => String(x).padStart(2, '0')).join(':'); };
   function startRun(run) {
     stopSolo(true);
     closeKeyboard();
@@ -305,21 +364,29 @@
     map = makeMap();
     const now = serverNow();
     let cue = 0; while (cue < sch.ev.length && sch.ev[cue].at < now - 60) cue++;   // late join: skip cues already past
-    R = { run, sch, part, cue, gi: -1, key: null, lastMapCheck: 0 };
+    const tok = {};
+    R = { run, sch, part, cue, gi: -1, key: null, lastMapCheck: 0, tok, tailUntil: 0 };
     mode = 'run';
+    hideOverlays();
     showStage();
     log.push({ ev: 'start', run: run.id, part, serverT: now, perf: performance.now() });
-    requestAnimationFrame(frame);
+    requestAnimationFrame(() => frame(tok));
   }
   // a frame drawn now reaches the glass at the next vsync: look ahead half a frame so the
   // display error is centred on the beat instead of always one frame late
   let lastFrameAt = 0, frameDt = 16.7;
-  function frame() {
-    if (!R) return;
+  function frame(tok) {
+    if (!R || R.tok !== tok) return;
     const pnow = performance.now();
     if (lastFrameAt) { const d = pnow - lastFrameAt; if (d > 4 && d < 50) frameDt = frameDt * 0.9 + d * 0.1; }
     lastFrameAt = pnow;
     const real = serverNow(), now = real + Math.min(8, frameDt / 2), sch = R.sch, run = R.run;
+    // after a stop: black, no cues, then back to the dial
+    if (R.tailUntil) {
+      if (R.key !== 'black') { blank(); R.key = 'black'; }
+      if (real >= R.tailUntil) { finishRun(); return; }
+      requestAnimationFrame(() => frame(tok)); return;
+    }
     // what is due now
     let key = 'black', c = null, colour = '#000', alpha = 1, due = null;
     if (now >= run.startAt - 5000 && now < run.startAt) {
@@ -353,17 +420,27 @@
         CUE[e.kind](acAt(e.at), e);
       }
     }
-    if (now > sch.end + 1300) { finishRun(); return; }
-    requestAnimationFrame(frame);
+    if (now > sch.end + TAIL_END) { finishRun(); return; }
+    requestAnimationFrame(() => frame(tok));
   }
   function finishRun() { if (!R) return; log.push({ ev: 'end', run: R.run.id, serverT: serverNow() }); R = null; backToDial(); }
-  function remoteStop() { if (!R) return; log.push({ ev: 'stopped', run: R.run.id, serverT: serverNow() }); R = null; backToDial(); }
+  function remoteStop() {
+    if (!R || R.tailUntil) return;
+    stopAllTones();
+    log.push({ ev: 'stopped', run: R.run.id, serverT: serverNow() });
+    R.tailUntil = serverNow() + TAIL_STOP;
+  }
   function leaveRun() {
-    if (R) { leftRunId = R.run.id; log.push({ ev: 'left', run: R.run.id, serverT: serverNow() }); R = null; backToDial(); }
+    if (R) { leftRunId = R.run.id; stopAllTones(); log.push({ ev: 'left', run: R.run.id, serverT: serverNow() }); R = null; backToDial(); }
     else if (SOLO) stopSolo();
   }
-  function backToDial() { hideStage(); mode = 'dial'; renderDial(); }
-  function runActive() { return S && S.run && serverNow() < runEnd(S.run) + 200; }
+  function backToDial() { hideStage(); mode = 'dial'; renderDial(); renderTurn(); }
+  // the server keeps a run a little past the client's end (flash + 500 ms): match it so START is not refused
+  function runActive() {
+    if (!S || !S.run) return false;
+    const sc = buildSchedule(S.run, 0);
+    return serverNow() < sc.end + sc.flash + 600;
+  }
 
   // ------------------------------------------------------------------ solo step (local, unsynced)
   function startSolo() {
@@ -405,14 +482,25 @@
   }
 
   // stage input: hold 3 s anywhere to leave; solo uses press/release
+  // A walker's thumbs rest on the glass: in a synced run one finger does nothing, leaving takes two
+  // fingers held for 2 s. Solo step uses one finger to light and a 3 s hold to leave.
   let holdTimer = null;
+  const touching = new Set();
   stage.addEventListener('pointerdown', (e) => {
     e.preventDefault();
-    clearTimeout(holdTimer);
-    holdTimer = setTimeout(() => { holdTimer = null; leaveRun(); }, 3000);
-    if (mode === 'solo') soloDown();
+    touching.add(e.pointerId);
+    if (mode === 'solo') {
+      if (touching.size === 1) { clearTimeout(holdTimer); holdTimer = setTimeout(() => { holdTimer = null; leaveRun(); }, 3000); soloDown(); }
+      return;
+    }
+    if (touching.size >= 2 && !holdTimer) holdTimer = setTimeout(() => { holdTimer = null; leaveRun(); }, 2000);
   });
-  const release = () => { clearTimeout(holdTimer); holdTimer = null; if (mode === 'solo') soloUp(); };
+  const release = (e) => {
+    touching.delete(e && e.pointerId);
+    if (mode === 'test') { hideStage(); mode = 'dial'; renderTurn(); return; }
+    if (mode === 'solo') { if (touching.size === 0) { clearTimeout(holdTimer); holdTimer = null; soloUp(); } return; }
+    if (touching.size < 2) { clearTimeout(holdTimer); holdTimer = null; }
+  };
   stage.addEventListener('pointerup', release);
   stage.addEventListener('pointercancel', release);
   stage.addEventListener('contextmenu', (e) => e.preventDefault());
@@ -428,8 +516,14 @@
   let wake = null;
   const vid = $('wakeVid');
   async function keepAwake() {
-    try { if ('wakeLock' in navigator && !(wake && !wake.released)) wake = await navigator.wakeLock.request('screen'); } catch (e) { wake = null; }
+    try {
+      if ('wakeLock' in navigator && !(wake && !wake.released)) {
+        wake = await navigator.wakeLock.request('screen');
+        wake.addEventListener('release', () => renderReady());
+      }
+    } catch (e) { wake = null; }
     try { const p = vid.play(); if (p && p.catch) p.catch(() => {}); } catch (e) {}
+    renderReady();
   }
 
   // ------------------------------------------------------------------ ARM
@@ -437,9 +531,12 @@
     unlockAudio();
     keepAwake();
     armed = true;
-    $('arm').hidden = true; $('dial').hidden = false; mode = 'dial';
+    // Android installed apps can lock portrait; iOS ignores this (rotation lock is in Control Centre)
+    try { if (isStandalone() && screen.orientation && screen.orientation.lock) screen.orientation.lock('portrait').catch(() => {}); } catch (e) {}
+    show(needCheck() ? 'check' : 'dial'); mode = 'dial';
     renderDial();
     if (S && S.run) syncRun(S.run);
+    if (pending) syncRun(pending);
   }
   $('armBtn').addEventListener('click', arm);
 
@@ -451,11 +548,12 @@
     conduct: $('conductBtn'), name: $('name'), phones: $('phones'),
     bpm: $('bpm'), flash: $('flash'), walkback: $('walkback'), colour: $('colour'), caps: $('caps'), size: $('size'), level: $('level'),
     shareUrl: $('shareUrl'), qr: $('qr'), solo: $('soloBtn'), toast: $('toast'),
+    wait: $('wait'), waitT: $('waitT'), waitIn: $('waitIn'), minute: $('minuteBtn'), atTime: $('atTime'), atBtn: $('atBtn'),
   };
   el.name.value = myName;
   el.size.value = display.size; el.level.value = display.level;
 
-  const conductorOther = () => S && S.conductor && S.conductor.id !== clientId;
+  const conductorOther = () => wsOpen && S && !S.cached && S.conductor && S.conductor.id !== clientId;
   const iConduct = () => S && S.conductor && S.conductor.id === clientId;
 
   function renderConn() {
@@ -465,7 +563,7 @@
     renderStartState();
   }
   function renderPresence() {
-    if (!wsOpen) { el.here.textContent = 'offline'; return; }
+    if (!wsOpen) { el.here.textContent = 'no signal · saved words'; return; }
     el.here.textContent = here === 1 ? '1 phone here' : `${here} phones here`;
   }
   function renderSync() {
@@ -512,7 +610,7 @@
         el.partSeg.innerHTML = '';
         for (let i = 0; i < want; i++) {
           const b = document.createElement('button'); b.type = 'button'; b.textContent = String(i + 1);
-          b.addEventListener('click', () => { partChoice = i; renderDial(); });
+          b.addEventListener('click', () => { partChoice = i; store.set('part.' + ch, i); renderDial(); });
           el.partSeg.appendChild(b);
         }
       }
@@ -527,17 +625,22 @@
   }
   function setIfIdle(input, v) { if (v != null && document.activeElement !== input && String(input.value) !== String(v)) input.value = v; }
   function renderStartState() {
-    const other = conductorOther(), active = !!runActive(), mine = iConduct();
+    const other = conductorOther(), active = wsOpen && !!runActive(), mine = iConduct();
+    const waiting = !!(pending && !pending.local) && pending.startAt - serverNow() > LEAD;
     let note = '', disabled = false, label = 'START';
-    if (!wsOpen) { disabled = true; note = 'Offline. Reconnecting…'; }
-    else if (!S) { disabled = true; note = 'Joining channel…'; }
+    if (!S) { disabled = true; note = 'Joining channel…'; }
+    else if (!wsOpen) { note = 'No signal: START runs on this phone only. To line up several phones, use START ON THE NEXT MINUTE.'; }
     else if (other) { disabled = true; note = `conducted by ${S.conductor.name || 'someone'}`; }
+    else if (waiting && !mine) { disabled = true; note = `Set for ${hhmmss(pending.startAt)}.`; }
     else if (active && !mine) { disabled = true; note = 'A run is going.'; }
     else if (active && mine) { label = 'RESTART'; }
     el.start.textContent = label; el.start.disabled = disabled;
-    el.startNote.textContent = note; el.startNote.className = 'note' + (other || !wsOpen ? ' warn' : '');
-    el.runRow.hidden = !(active && mode === 'dial');
+    el.startNote.textContent = note; el.startNote.className = 'note' + (other ? ' warn' : '');
+    el.runRow.hidden = !((active || (pending && !pending.local)) && mode === 'dial');
     el.stop.disabled = !!other;
+    el.stop.textContent = wsOpen ? 'STOP FOR ALL' : 'SKIP ON THIS PHONE';
+    el.minute.disabled = !S || (!!other) || (active && !mine);
+    el.atBtn.disabled = !S || !wsOpen || !!other || (active && !mine);
     el.conduct.setAttribute('aria-pressed', String(!!mine));
     el.conduct.disabled = !!other || !wsOpen;
     el.conduct.textContent = mine ? 'CONDUCTING · TAP TO LET GO' : other ? `CONDUCTED BY ${(S.conductor.name || 'someone').toUpperCase()}` : 'I’M CONDUCTING THIS CHANNEL';
@@ -562,9 +665,9 @@
   function setChannel(n, now) {
     n = clampInt(n, 1, 99, ch);
     if (n === ch && !now) { renderChannel(); return; }
-    ch = n; store.set('ch', ch); partChoice = null; you = null;
+    ch = n; store.set('ch', ch); partChoice = store.get('part.' + ch, null); you = null; pending = null;
     try { const u = new URL(location.href); u.searchParams.set('ch', String(ch)); u.searchParams.delete('source'); history.replaceState(null, '', u); } catch (e) {}
-    S = null; renderDial();
+    S = cachedState(ch); renderDial(); if (S.run) syncRun(S.run);
     clearTimeout(chTimer);
     chTimer = setTimeout(() => { backoff = 500; connect(); }, now ? 0 : 350);
   }
@@ -588,7 +691,7 @@
     const c = cleanText(el.text.value);
     if (c !== el.text.value) { const p = el.text.selectionStart; el.text.value = c; try { el.text.setSelectionRange(p, p); } catch (e) {} }
     textDirtyUntil = Date.now() + 1500;
-    if (S) { S.text = el.text.value; renderPhones(splitLines(S.text, (S.settings || {}).caps !== false), (S.settings || {}).formation === 'together' ? myPart(splitLines(S.text, true).length) : -1, (S.settings || {}).colour || 'white'); }
+    if (S) { S.text = el.text.value; saveState(); renderPhones(splitLines(S.text, (S.settings || {}).caps !== false), (S.settings || {}).formation === 'together' ? myPart(splitLines(S.text, true).length) : -1, (S.settings || {}).colour || 'white'); }
     clearTimeout(setTimer);
     setTimer = setTimeout(() => send({ t: 'set', text: el.text.value }), 400);
   });
@@ -627,10 +730,32 @@
   // start / stop / rejoin
   el.start.addEventListener('click', () => {
     unlockAudio(); keepAwake();
-    if (!send({ t: 'start' })) toast('Offline. Reconnecting…');
     leftRunId = null;
+    if (!(wsOpen && send({ t: 'start' }))) startLocal(serverNow() + 5400);   // no signal: this phone only
   });
-  el.stop.addEventListener('click', () => send({ t: 'stop' }));
+  el.stop.addEventListener('click', () => {
+    if (wsOpen && send({ t: 'stop' })) return;
+    const r = pending || (S && S.run); if (r) leftRunId = r.id;          // no signal: skip it here
+    pending = null; renderWait(); renderDial();
+  });
+  el.minute.addEventListener('click', () => {
+    unlockAudio(); keepAwake(); leftRunId = null;
+    const at = nextMinute();
+    if (!(wsOpen && send({ t: 'start', at }))) startLocal(at);
+    toast(`Starts at ${hhmmss(at)}`, true);
+  });
+  el.atBtn.addEventListener('click', () => {
+    unlockAudio(); keepAwake();
+    const v = el.atTime.value; if (!/^\d\d:\d\d/.test(v)) { toast('Pick a time first.'); return; }
+    const [hh, mm] = v.split(':').map(Number);
+    const d = new Date(); d.setHours(hh, mm, 0, 0);
+    if (d.getTime() < Date.now() + 10000) d.setDate(d.getDate() + 1);
+    const at = d.getTime() + offset;                                      // phone wall clock -> server time
+    if (at - serverNow() > 6 * 3600 * 1000) { toast('Up to 6 hours ahead.'); return; }
+    leftRunId = null;
+    if (send({ t: 'start', at })) toast(`Set for ${hhmmss(at)} on every phone here`, true);
+    else toast('Needs signal. Use START ON THE NEXT MINUTE outside.');
+  });
   el.rejoin.addEventListener('click', () => { leftRunId = null; if (S && S.run) syncRun(S.run); });
 
   // conduct + name
@@ -652,7 +777,147 @@
 
   function closeKeyboard() { const a = document.activeElement; if (a && a.blur && a !== document.body) a.blur(); }
   let toastTimer = null;
-  function toast(msg) { el.toast.textContent = msg; el.toast.hidden = false; clearTimeout(toastTimer); toastTimer = setTimeout(() => { el.toast.hidden = true; }, 3000); }
+  function toast(msg, calm) {
+    if (!stage.hidden) return;                 // anything lit during a run prints into the photo
+    el.toast.classList.toggle('calm', !!calm);
+    el.toast.textContent = msg; el.toast.hidden = false; clearTimeout(toastTimer); toastTimer = setTimeout(() => { el.toast.hidden = true; }, 3000); }
+
+
+  // ------------------------------------------------------------------ platform, screens, guides
+  const UA = navigator.userAgent || '';
+  const isIOS = /iPad|iPhone|iPod/.test(UA) || (/Macintosh/.test(UA) && navigator.maxTouchPoints > 1);
+  const isAndroid = /Android/i.test(UA);
+  const coarse = (() => { try { return matchMedia('(pointer: coarse)').matches; } catch (e) { return false; } })();
+  const isPhone = isIOS || isAndroid || coarse;
+  const inApp = /FBAN|FBAV|FB_IAB|Instagram|Line\/|WhatsApp|Twitter|LinkedInApp|Snapchat|TikTok|musical_ly|Pinterest|GSA\//i.test(UA);
+  function isStandalone() {
+    try { return navigator.standalone === true || matchMedia('(display-mode: standalone)').matches || matchMedia('(display-mode: fullscreen)').matches; }
+    catch (e) { return false; }
+  }
+  const kind = isAndroid ? 'android' : !isIOS ? 'safari' : inApp ? 'inapp' : /CriOS|FxiOS|EdgiOS|OPiOS/.test(UA) ? 'ios-other' : 'safari';
+  document.documentElement.classList.add(isAndroid ? 'is-android' : 'is-ios');
+  const ss = { get(k) { try { return sessionStorage.getItem('lt.' + k); } catch (e) { return null; } }, set(k, v) { try { sessionStorage.setItem('lt.' + k, v); } catch (e) {} } };
+  function needInstall() { return params.has('install') || (isPhone && !isStandalone() && ss.get('skipInstall') !== '1'); }
+  const CHECK_V = 1;
+  function needCheck() { return params.has('check') || (isPhone && store.get('checkedV', 0) < CHECK_V); }
+
+  const SCREENS = ['install', 'arm', 'check', 'dial'];
+  let screenNow = 'arm';
+  function show(id) {
+    SCREENS.forEach((k) => { $(k).hidden = k !== id; });
+    screenNow = id;
+    try { window.scrollTo(0, 0); } catch (e) {}
+    if (id === 'check') renderChecks();
+    if (id === 'install') renderInstall();
+    renderTurn();
+  }
+
+  // install guide
+  let bip = null;   // Android's install prompt
+  window.addEventListener('beforeinstallprompt', (e) => { e.preventDefault(); bip = e; renderInstall(); });
+  window.addEventListener('appinstalled', () => { bip = null; renderInstall(); });
+  function renderInstall() {
+    document.querySelectorAll('#install [data-kind]').forEach((n) => { n.hidden = n.dataset.kind !== kind; });
+    const ib = $('installBtn'); if (ib) ib.hidden = !bip;
+  }
+  $('installBtn').addEventListener('click', async () => {
+    if (!bip) return;
+    try { bip.prompt(); await bip.userChoice; } catch (e) {}
+    bip = null; renderInstall();
+  });
+  $('skipInstall').addEventListener('click', () => { ss.set('skipInstall', '1'); show('arm'); });
+  document.querySelectorAll('.copyLink').forEach((b) => b.addEventListener('click', async () => {
+    const url = `${location.origin}/?ch=${ch}`;
+    try { await navigator.clipboard.writeText(url); toast('Link copied. Paste it into Safari.', true); }
+    catch (e) { toast(url, true); }
+  }));
+
+  // checklist
+  const ticks = Object.assign({}, store.get('ticks', {}));
+  function renderChecks() {
+    document.querySelectorAll('#check .checks > li').forEach((li) => {
+      const k = li.dataset.k, on = !!ticks[k];
+      li.classList.toggle('done', on);
+      const b = li.querySelector('.tick'); if (b) b.setAttribute('aria-pressed', String(on));
+    });
+    renderReady();
+  }
+  document.querySelectorAll('#check .tick').forEach((b) => b.addEventListener('click', () => {
+    const k = b.closest('li').dataset.k; ticks[k] = !ticks[k]; store.set('ticks', ticks); renderChecks();
+  }));
+  $('testSound').addEventListener('click', () => {
+    unlockAudio(); keepAwake();
+    const a = ac; if (!a) { toast('No sound on this phone.'); return; }
+    const t = a.currentTime + 0.08;
+    CUE.count(t); CUE.count(t + 0.5); CUE.count(t + 1); CUE.go(t + 1.5);
+    setTimeout(renderReady, 200);
+  });
+  $('checkDone').addEventListener('click', () => { store.set('checkedV', CHECK_V); unlockAudio(); show('dial'); renderDial(); });
+
+  // hold to test the light: the first letter of the words, at this phone's size and level
+  document.querySelectorAll('.testLight').forEach((b) => {
+    b.addEventListener('pointerdown', (e) => {
+      e.preventDefault();
+      if (R || SOLO) return;
+      try { b.setPointerCapture(e.pointerId); } catch (_) {}
+      mode = 'test'; hideOverlays(); showStage();
+      const L = S ? splitLines(S.text, true) : [];
+      const first = (L[0] || []).find((c) => c !== ' ') || 'L';
+      paint(first, '#ffffff', level());
+    });
+    const up = () => { if (mode !== 'test') return; hideStage(); mode = 'dial'; renderTurn(); };
+    b.addEventListener('pointerup', up); b.addEventListener('pointercancel', up); b.addEventListener('lostpointercapture', up);
+    b.addEventListener('contextmenu', (e) => e.preventDefault());
+  });
+
+  // readiness: what this phone can confirm about itself
+  function isLandscape() {
+    try { const t = screen.orientation && screen.orientation.type; if (t) return t.indexOf('landscape') === 0; } catch (e) {}
+    if (typeof window.orientation === 'number') return Math.abs(window.orientation) === 90;
+    try { return matchMedia('(orientation: landscape)').matches; } catch (e) { return false; }
+  }
+  function readiness() {
+    return {
+      sound: !!(ac && ac.state === 'running'),
+      awake: !!((wake && !wake.released) || (vid && !vid.paused)),
+      upright: !isLandscape(),
+      app: isStandalone() || !isPhone,
+      saved: !!(navigator.serviceWorker && navigator.serviceWorker.controller),
+    };
+  }
+  const LIVE = {
+    rot: (r) => r.upright ? 'Upright now.' : 'Sideways now: turn it upright.',
+    sound: (r) => r.sound ? 'Sound is on in Light Type.' : 'Sound is asleep: tap TEST SOUND.',
+    awake: (r) => r.awake ? 'Light Type is keeping the screen on.' : 'Not confirmed: set Auto-Lock to Never.',
+  };
+  function renderReady() {
+    const r = readiness();
+    document.querySelectorAll('[data-r]').forEach((n) => { const v = !!r[n.dataset.r]; n.classList.toggle('ok', v); n.classList.toggle('bad', !v); });
+    document.querySelectorAll('[data-live]').forEach((n) => { const k = n.dataset.live, f = LIVE[k]; if (f) { n.textContent = f(r); n.classList.toggle('bad', !(k === 'rot' ? r.upright : r[k])); } });
+  }
+  $('ready').addEventListener('click', () => { unlockAudio(); keepAwake(); show('check'); });
+  setInterval(() => { if (screenNow === 'dial' || screenNow === 'check') renderReady(); }, 1000);
+
+  // turn upright: a phone in landscape, outside a run
+  let keepSideways = ss.get('sideways') === '1';
+  function hideOverlays() { $('turn').hidden = true; el.toast.hidden = true; }
+  function renderTurn() {
+    const on = isPhone && !keepSideways && stage.hidden && isLandscape();
+    $('turn').hidden = !on;
+  }
+  $('turnKeep').addEventListener('click', () => { keepSideways = true; ss.set('sideways', '1'); renderTurn(); });
+
+  // scheduled runs: the time and a countdown above START
+  function renderWait() {
+    const p = pending;
+    if (!p || p.startAt - serverNow() <= 0) { el.wait.hidden = true; renderStartState(); return; }
+    el.wait.hidden = false;
+    el.waitT.textContent = hhmmss(p.startAt);
+    const sLeft = Math.max(0, Math.ceil((p.startAt - serverNow()) / 1000));
+    const h = Math.floor(sLeft / 3600), m = Math.floor((sLeft % 3600) / 60), sec = sLeft % 60;
+    el.waitIn.textContent = 'in ' + (h ? `${h}:${String(m).padStart(2, '0')}` : `${m}`) + ':' + String(sec).padStart(2, '0') + (p.local ? ' · this phone' : '');
+    renderStartState();
+  }
 
   // ------------------------------------------------------------------ lifecycle
   document.addEventListener('visibilitychange', () => {
@@ -662,7 +927,9 @@
     if (R) map = makeMap();
   });
   window.addEventListener('online', () => { backoff = 500; connect(); });
-  const onResize = () => { if (!stage.hidden) { sizeStage(); if (R) R.key = null; } };
+  window.addEventListener('orientationchange', () => { renderTurn(); renderReady(); });
+  try { screen.orientation && screen.orientation.addEventListener('change', () => { renderTurn(); renderReady(); }); } catch (e) {}
+  const onResize = () => { renderTurn(); if (!stage.hidden) { sizeStage(); if (R) R.key = null; } };
   window.addEventListener('resize', onResize);
   if (window.visualViewport) window.visualViewport.addEventListener('resize', onResize);
 
@@ -676,11 +943,16 @@
     get offset() { return offset; }, get rtt() { return bestRtt; }, get state() { return S; },
     get mode() { return mode; }, get ch() { return ch; }, get armed() { return armed; },
     schedule: (run, part) => buildSchedule(run, part || 0),
-    drawLetter,
+    drawLetter, readiness, nextMinute, get pending() { return pending; },
   };
 
+  { const d = new Date(Date.now() + 10 * 60000); d.setMinutes(Math.ceil(d.getMinutes() / 5) * 5, 0, 0);
+    el.atTime.value = `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`; }
   store.set('ch', ch);
+  S = cachedState(ch);
+  show(needInstall() ? 'install' : 'arm');
   renderDial();
+  if (S.run) syncRun(S.run);
   connect();
   if (document.fonts && document.fonts.load) document.fonts.load('40px "IBM VGA"').catch(() => {});
 })();

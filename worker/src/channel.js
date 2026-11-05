@@ -298,7 +298,10 @@ export class Channel extends DurableObject {
       case "start": {
         if (blocked) return this.err(ws, "conductor", "a conductor holds this channel");
         if (this.s.run && !isConductor) return this.err(ws, "running", "a run is in progress");
-        const startAt = now + LEAD_MS;
+        // optional scheduled start: `at` (server ms), from 5 s to 6 h ahead; phones keep the run and
+        // play it at that time even with no signal
+        const at = Number(m.at);
+        const startAt = Number.isFinite(at) && at >= now + 5000 && at <= now + 6 * 3600 * 1000 ? Math.round(at) : now + LEAD_MS;
         const text = this.s.text;
         const settings = { ...this.s.settings };
         this.s.run = { id: randomId(), startAt, text, settings };

@@ -19,6 +19,116 @@
 <link rel="stylesheet" href="/style.css">
 </head>
 <body>
+<!-- iOS-style glyphs used in the guides: Share, More, Add to Home Screen, rotation lock, Focus, brightness, sound -->
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <defs>
+    <symbol id="i-share" viewBox="0 0 24 24"><path d="M12 3v11M8 7l4-4 4 4M8.5 10H6.5v10h11V10h-2" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+    <symbol id="i-more" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9.5" fill="none" stroke="currentColor" stroke-width="1.6"/><circle cx="7.5" cy="12" r="1.4" fill="currentColor"/><circle cx="12" cy="12" r="1.4" fill="currentColor"/><circle cx="16.5" cy="12" r="1.4" fill="currentColor"/></symbol>
+    <symbol id="i-add" viewBox="0 0 24 24"><rect x="3.5" y="3.5" width="17" height="17" rx="4" fill="none" stroke="currentColor" stroke-width="1.7"/><path d="M12 8v8M8 12h8" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></symbol>
+    <symbol id="i-rot" viewBox="0 0 24 24"><path d="M19.5 12a7.5 7.5 0 1 1-2.2-5.3" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/><path d="M17.6 3.4v3.5h-3.5" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/><rect x="9" y="11.2" width="6" height="4.8" rx="1" fill="currentColor"/><path d="M10.2 11.2V10a1.8 1.8 0 0 1 3.6 0v1.2" fill="none" stroke="currentColor" stroke-width="1.4"/></symbol>
+    <symbol id="i-moon" viewBox="0 0 24 24"><path d="M19.5 14.6A8 8 0 0 1 9.4 4.5a8 8 0 1 0 10.1 10.1z" fill="currentColor"/></symbol>
+    <symbol id="i-sun" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4" fill="currentColor"/><path d="M12 2.5v2.2M12 19.3v2.2M2.5 12h2.2M19.3 12h2.2M5.3 5.3l1.5 1.5M17.2 17.2l1.5 1.5M5.3 18.7l1.5-1.5M17.2 6.8l1.5-1.5" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></symbol>
+    <symbol id="i-sound" viewBox="0 0 24 24"><path d="M4 9.5h3.5L12 5.5v13l-4.5-4H4z" fill="currentColor"/><path d="M15.5 9a4 4 0 0 1 0 6M18 6.5a7.5 7.5 0 0 1 0 11" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></symbol>
+    <symbol id="i-tape" viewBox="0 0 24 24"><rect x="6" y="2.5" width="12" height="19" rx="2.5" fill="none" stroke="currentColor" stroke-width="1.6"/><rect x="4" y="4" width="16" height="3.4" rx="0.6" fill="currentColor"/></symbol>
+    <symbol id="i-awake" viewBox="0 0 24 24"><path d="M2.5 12s3.5-6 9.5-6 9.5 6 9.5 6-3.5 6-9.5 6-9.5-6-9.5-6z" fill="none" stroke="currentColor" stroke-width="1.7"/><circle cx="12" cy="12" r="2.8" fill="currentColor"/></symbol>
+  </defs>
+</svg>
+
+
+<!-- INSTALL: phones in a browser tab. The Home Screen app runs fullscreen with no browser bar to glow in the photo. -->
+<section id="install" class="screen guide" hidden>
+  <div class="guide-head">
+    <div class="kicker">LIGHT TYPE</div>
+    <h1 class="guide-title">PUT IT ON YOUR HOME SCREEN</h1>
+    <p class="lede">From the Home Screen it opens fullscreen, with no browser bar to glow in the photo.</p>
+  </div>
+
+  <ol class="steps" data-kind="safari">
+    <li><span class="n">1</span><span>In Safari's bottom bar tap <svg class="ico"><use href="#i-more"/></svg>, then <b>Share</b> <svg class="ico"><use href="#i-share"/></svg>.<small>If you can see <svg class="ico"><use href="#i-share"/></svg> in the bar already, tap that.</small></span></li>
+    <li><span class="n">2</span><span>Scroll the list and tap <b>Add to Home Screen</b> <svg class="ico"><use href="#i-add"/></svg>.</span></li>
+    <li><span class="n">3</span><span>Leave <b>Open as Web App</b> on. Tap <b>Add</b>.</span></li>
+    <li><span class="n">4</span><span>Close Safari. Open <b>Light Type</b> from your Home Screen.<small>No icon? Swipe to your last Home Screen page. Hold the icon to drag it where you want it.</small></span></li>
+  </ol>
+
+  <ol class="steps" data-kind="ios-other" hidden>
+    <li><span class="n">1</span><span>Tap <b>Share</b> <svg class="ico"><use href="#i-share"/></svg> next to the address bar.</span></li>
+    <li><span class="n">2</span><span>Tap <b>Add to Home Screen</b> <svg class="ico"><use href="#i-add"/></svg>, then <b>Add</b>.</span></li>
+    <li><span class="n">3</span><span>Open <b>Light Type</b> from your Home Screen.<small>If there is no Add to Home Screen, copy the link and open it in Safari.</small></span></li>
+  </ol>
+
+  <div class="steps" data-kind="inapp" hidden>
+    <p>This page is open inside another app. Open it in Safari first: tap <svg class="ico"><use href="#i-more"/></svg> or the compass, then <b>Open in Safari</b>.</p>
+    <button class="btn wide copyLink" type="button">COPY THE LINK</button>
+  </div>
+
+  <div class="steps" data-kind="android" hidden>
+    <button id="installBtn" class="start" type="button" hidden>INSTALL</button>
+    <ol>
+      <li><span class="n">1</span><span>Tap <b>⋮</b> at the top right of Chrome.</span></li>
+      <li><span class="n">2</span><span>Tap <b>Add to Home screen</b> or <b>Install app</b>.</span></li>
+      <li><span class="n">3</span><span>Open <b>Light Type</b> from your Home screen.</span></li>
+    </ol>
+  </div>
+
+  <div class="guide-foot">
+    <button id="skipInstall" class="btn ghost wide" type="button">USE IT IN THE BROWSER FOR NOW</button>
+    <p class="note">Fine for a try. The browser bar stays lit and can show in the photo.</p>
+  </div>
+  <div class="pointer" data-kind="safari" aria-hidden="true"><span>SAFARI'S BAR</span><b>▼</b></div>
+</section>
+
+<!-- CHECK: once per phone, and from the readiness row on the dial. -->
+<section id="check" class="screen guide" hidden>
+  <div class="guide-head">
+    <div class="kicker">THIS PHONE</div>
+    <h1 class="guide-title">BEFORE THE DARK</h1>
+    <p class="lede">Once per phone. Tap each one when it's done.</p>
+  </div>
+  <ul class="checks">
+    <li data-k="rot">
+      <button class="tick" type="button" aria-pressed="false"><span class="box" aria-hidden="true"></span>
+        <span class="body"><b><svg class="ico"><use href="#i-rot"/></svg> LOCK IT UPRIGHT</b>
+          <span class="ios">Swipe down from the top-right corner. In Control Centre tap <svg class="ico"><use href="#i-rot"/></svg> so it lights up.</span>
+          <span class="android">Swipe down from the top. Turn <b>Auto-rotate</b> off, phone upright.</span>
+          <span class="live" data-live="rot"></span></span></button>
+    </li>
+    <li data-k="dnd">
+      <button class="tick" type="button" aria-pressed="false"><span class="box" aria-hidden="true"></span>
+        <span class="body"><b><svg class="ico"><use href="#i-moon"/></svg> DO NOT DISTURB</b>
+          <span class="ios">Control Centre › Focus › Do Not Disturb. A message would light up the screen mid-photo.</span>
+          <span class="android">Quick settings › Do not disturb. A message would light up the screen mid-photo.</span></span></button>
+    </li>
+    <li data-k="bright">
+      <button class="tick" type="button" aria-pressed="false"><span class="box" aria-hidden="true"></span>
+        <span class="body"><b><svg class="ico"><use href="#i-sun"/></svg> BRIGHTNESS ALL THE WAY UP</b>
+          <span class="ios">Slide it to the top in Control Centre. In the dark the phone dims itself: switch off Settings › Accessibility › Display &amp; Text Size › Auto-Brightness.</span>
+          <span class="android">Slide it to the top. Switch off <b>Adaptive brightness</b>, or the phone dims itself in the dark.</span></span></button>
+    </li>
+    <li data-k="sound">
+      <button class="tick" type="button" aria-pressed="false"><span class="box" aria-hidden="true"></span>
+        <span class="body"><b><svg class="ico"><use href="#i-sound"/></svg> SOUND ON</b>
+          <span class="ios">Silent mode off, volume up. The beeps tell you when to step.</span>
+          <span class="android">Volume up. The beeps tell you when to step.</span>
+          <span class="live" data-live="sound"></span></span></button>
+      <button id="testSound" class="btn ghost test-btn" type="button">TEST SOUND</button>
+    </li>
+    <li data-k="clock">
+      <button class="tick" type="button" aria-pressed="false"><span class="box" aria-hidden="true"></span>
+        <span class="body"><b><svg class="ico"><use href="#i-tape"/></svg> COVER THE CLOCK</b>
+          <span>The clock and battery at the top stay lit for the whole photo and print as a smear. Put a strip of black tape across the top edge, or keep a thumb there.</span></span></button>
+    </li>
+    <li data-k="awake">
+      <button class="tick" type="button" aria-pressed="false"><span class="box" aria-hidden="true"></span>
+        <span class="body"><b><svg class="ico"><use href="#i-awake"/></svg> SCREEN STAYS ON</b>
+          <span class="ios">Light Type keeps the screen awake. As a backstop: Settings › Display &amp; Brightness › Auto-Lock › Never. Low Power Mode off.</span>
+          <span class="android">Light Type keeps the screen awake. As a backstop set Screen timeout to the longest.</span>
+          <span class="live" data-live="awake"></span></span></button>
+    </li>
+  </ul>
+  <button class="btn ghost wide testLight" type="button">HOLD TO TEST THE LIGHT</button>
+  <p class="note">Lights a letter for as long as you hold. Check it from where the camera stands.</p>
+  <button id="checkDone" class="start" type="button">READY</button>
+</section>
 
 <!-- ARM: every launch. The tap unlocks sound and keeps the screen awake. -->
 <section id="arm" class="screen">
@@ -35,6 +145,9 @@
     <span id="here" class="here">offline</span>
     <span id="sync" class="sync">sync …</span>
   </div>
+  <button id="ready" class="ready" type="button" aria-label="This phone: open the checklist">
+    <span class="rd" data-r="sound">SOUND</span><span class="rd" data-r="awake">AWAKE</span><span class="rd" data-r="upright">UPRIGHT</span><span class="rd" data-r="app">APP</span><span class="rd" data-r="saved">SAVED</span><span class="rd-more">CHECKLIST ›</span>
+  </button>
 
   <section class="channel" aria-label="Channel">
     <div class="ch-label">CHANNEL</div>
@@ -65,12 +178,30 @@
   </section>
 
   <section class="go">
+    <div id="wait" class="wait" hidden>
+      <div class="wait-k">NEXT RUN</div>
+      <div id="waitT" class="wait-t">--:--:--</div>
+      <div id="waitIn" class="wait-in"></div>
+      <div class="note">Keep Light Type open with the screen on. It goes black 7 seconds before.</div>
+    </div>
     <button id="startBtn" class="start" type="button">START</button>
     <div id="runRow" class="run-row" hidden>
       <button id="rejoinBtn" class="btn" type="button">REJOIN</button>
       <button id="stopBtn" class="btn warn" type="button">STOP FOR ALL</button>
     </div>
     <div id="startNote" class="note"></div>
+    <details id="later" class="later">
+      <summary>LATER · NO SIGNAL</summary>
+      <div class="later-body">
+        <button id="minuteBtn" class="btn wide" type="button">START ON THE NEXT MINUTE</button>
+        <div class="note">Every phone that taps this in the same minute starts together on the next :00, signal or not.</div>
+        <div class="at-row">
+          <label class="field"><span>START AT</span><input id="atTime" type="time" step="60"></label>
+          <button id="atBtn" class="btn" type="button">SET FOR ALL</button>
+        </div>
+        <div class="note">Set it inside on the wifi. Every phone on this channel keeps the time and runs it at that moment, even with no signal outside. Open the app on every phone before you leave the wifi.</div>
+      </div>
+    </details>
   </section>
 
   <section class="conduct">
@@ -118,20 +249,30 @@
   <section class="solo">
     <button id="soloBtn" class="btn ghost wide" type="button">SOLO STEP (this phone only)</button>
     <div class="note">Press and hold to light each letter. Not synced.</div>
+    <button class="btn ghost wide testLight" type="button">HOLD TO TEST THE LIGHT</button>
   </section>
 
   <section class="help">
     <div class="h">HOW</div>
     <ol>
-      <li>Everyone opens the same channel and taps ARM.</li>
+      <li>Everyone opens the same channel and taps ARM. Phones locked upright, brightness up, clock covered.</li>
       <li>Photographer: tripod, bulb, remote. Open the shutter on the long low beep after 1.</li>
       <li>Walker: stand at the first knot, screen to the lens. Step on each click.</li>
       <li>The face at the end goes on close knots, one phone-width apart (about 7 cm): shuffle sideways on the soft ticks so its parts touch.</li>
       <li>Close the shutter on the two-note end tone.</li>
-      <li>To leave the black screen: hold a finger down for 3 seconds.</li>
+      <li>The screen stays black for a few seconds after the end tone, so nothing lights the photo while the shutter closes.</li>
+      <li>To leave the black screen early: hold two fingers on it for 2 seconds (solo step: one finger, 3 seconds).</li>
     </ol>
   </section>
 </main>
+
+<!-- TURN: shown in landscape on a phone, never during a run. -->
+<div id="turn" class="turn" hidden>
+  <div class="turn-phone" aria-hidden="true"></div>
+  <div class="turn-big">TURN IT UPRIGHT</div>
+  <div class="turn-small">Then lock rotation <svg class="ico"><use href="#i-rot"/></svg> in Control Centre so it stays that way.</div>
+  <button id="turnKeep" class="btn ghost" type="button">KEEP IT SIDEWAYS</button>
+</div>
 
 <!-- RUN: the print head. Black, one glyph. -->
 <div id="stage" hidden><canvas id="gc"></canvas></div>
