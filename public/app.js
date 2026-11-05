@@ -334,8 +334,7 @@
     if (run.startAt - serverNow() > LEAD) { pending = run; watchPending(); renderWait(); return; }
     if (pending && pending.id === run.id) pending = null;
     renderWait();
-    if (!armed) return;          // joins on arm
-    startRun(run);
+    startRun(run);               // a phone nobody has touched yet still lights, without sound
   }
   function watchPending() {
     if (waitTimer) return;
@@ -533,12 +532,13 @@
     armed = true;
     // Android installed apps can lock portrait; iOS ignores this (rotation lock is in Control Centre)
     try { if (isStandalone() && screen.orientation && screen.orientation.lock) screen.orientation.lock('portrait').catch(() => {}); } catch (e) {}
-    show(needCheck() ? 'check' : 'dial'); mode = 'dial';
+    $('soundBar').hidden = true;
     renderDial();
     if (S && S.run) syncRun(S.run);
     if (pending) syncRun(pending);
   }
-  $('armBtn').addEventListener('click', arm);
+  // the first touch anywhere turns sound on (iOS needs a gesture) and keeps the screen awake
+  document.addEventListener('pointerdown', () => { if (!armed) arm(); }, true);
 
   // ------------------------------------------------------------------ DIAL wiring
   const el = {
@@ -801,8 +801,8 @@
   const CHECK_V = 1;
   function needCheck() { return params.has('check') || (isPhone && store.get('checkedV', 0) < CHECK_V); }
 
-  const SCREENS = ['install', 'arm', 'check', 'dial'];
-  let screenNow = 'arm';
+  const SCREENS = ['install', 'check', 'dial'];
+  let screenNow = 'dial';
   function show(id) {
     SCREENS.forEach((k) => { $(k).hidden = k !== id; });
     screenNow = id;
@@ -825,7 +825,7 @@
     try { bip.prompt(); await bip.userChoice; } catch (e) {}
     bip = null; renderInstall();
   });
-  $('skipInstall').addEventListener('click', () => { ss.set('skipInstall', '1'); show('arm'); });
+  $('skipInstall').addEventListener('click', () => { ss.set('skipInstall', '1'); show(needCheck() ? 'check' : 'dial'); });
   document.querySelectorAll('.copyLink').forEach((b) => b.addEventListener('click', async () => {
     const url = `${location.origin}/?ch=${ch}`;
     try { await navigator.clipboard.writeText(url); toast('Link copied. Paste it into Safari.', true); }
@@ -950,7 +950,7 @@
     el.atTime.value = `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`; }
   store.set('ch', ch);
   S = cachedState(ch);
-  show(needInstall() ? 'install' : 'arm');
+  show(needInstall() ? 'install' : needCheck() ? 'check' : 'dial');
   renderDial();
   if (S.run) syncRun(S.run);
   connect();

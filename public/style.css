@@ -241,3 +241,7 @@ input[type=time] { -webkit-appearance: none; appearance: none; }
 .toast.calm { color: var(--accent); border-color: var(--accent); }
 @media (prefers-reduced-motion: reduce) { .pointer b, .turn-phone { animation: none; } }
 .arm-next { font-size: 16px; color: var(--fg); text-align: center; line-height: 1.5; letter-spacing: 0.06em; }
+.soundbar { position: fixed; z-index: 30; left: max(12px, env(safe-area-inset-left, 0px)); right: max(12px, env(safe-area-inset-right, 0px));
+  bottom: max(12px, env(safe-area-inset-bottom, 0px)); width: auto; min-height: 64px; box-shadow: 0 0 0 6px #000; display: grid; gap: 2px; justify-items: center; background: var(--accent); color: #000;
+  border: 0; border-radius: 10px; font-size: 20px; letter-spacing: 0.04em; padding: 10px; }
+.soundbar small { font-size: 13px; letter-spacing: 0; }

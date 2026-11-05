@@ -130,14 +130,6 @@
   <button id="checkDone" class="start" type="button">READY</button>
 </section>
 
-<!-- ARM: every launch. The tap unlocks sound and keeps the screen awake. -->
-<section id="arm" class="screen">
-  <button id="armBtn" class="arm-btn" type="button">
-    <span class="arm-big">TAP<br>TO<br>ARM</span>
-    <span class="arm-small">turns sound on and keeps the screen awake</span>
-    <span class="arm-next">NEXT: CHANNEL · WORDS · SETTINGS<br>nothing lights up yet</span>
-  </button>
-</section>
 
 <!-- DIAL: pick a channel, check the words, press START. -->
 <main id="dial" class="screen" hidden>
@@ -146,6 +138,7 @@
     <span id="here" class="here">offline</span>
     <span id="sync" class="sync">sync …</span>
   </div>
+  <button id="soundBar" class="soundbar" type="button">TAP ANYWHERE TO TURN SOUND ON<small>iPhone plays no sound until you touch the screen</small></button>
   <button id="ready" class="ready" type="button" aria-label="This phone: open the checklist">
     <span class="rd" data-r="sound">SOUND</span><span class="rd" data-r="awake">AWAKE</span><span class="rd" data-r="upright">UPRIGHT</span><span class="rd" data-r="app">APP</span><span class="rd" data-r="saved">SAVED</span><span class="rd-more">CHECKLIST ›</span>
   </button>
