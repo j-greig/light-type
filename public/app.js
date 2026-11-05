@@ -179,6 +179,11 @@
   const frac = () => Math.max(0.2, Math.min(1, (+display.size || 98) / 100));
 
   // one letter, ink-centred; size from the cap H so every capital is the same size
+  // Latin letters, digits and ASCII marks: ink-centred, sized by the cap H.
+  // Anything else (the kaomoji signature) keeps its place on a shared baseline and one shared size,
+  // so the mouth sits low between the eyes and the brackets stand tall in the photo.
+  const SIGN_SET = '༼つ◕‿⚆○༽';
+  const isPlain = (c) => /^[\x20-\x7e]$/.test(c);
   function drawLetter(ctx, w, h, c, colour, alpha, fr) {
     ctx.fillStyle = '#000'; ctx.fillRect(0, 0, w, h);
     if (!c || c === ' ') return;
@@ -188,6 +193,18 @@
     const hw = (H.actualBoundingBoxLeft + H.actualBoundingBoxRight) || probe * 0.44;
     const hh = (H.actualBoundingBoxAscent + H.actualBoundingBoxDescent) || probe * 0.62;
     const size = probe * Math.min((w * fr) / hw, (h * fr) / hh);
+    ctx.textAlign = 'left'; ctx.textBaseline = 'alphabetic';
+    if (!isPlain(c)) {
+      // one size and one baseline for every glyph of the signature
+      let A = 0, D = 0, W = 0;
+      for (const g of Array.from(SIGN_SET + c)) { const m = ctx.measureText(g); A = Math.max(A, m.actualBoundingBoxAscent); D = Math.max(D, m.actualBoundingBoxDescent); W = Math.max(W, m.actualBoundingBoxLeft + m.actualBoundingBoxRight); }
+      const k = Math.min((w * fr) / (W || 1), (h * fr) / ((A + D) || 1));
+      ctx.font = `${probe * k}px ${FAM}`;
+      const m = ctx.measureText(c);
+      const x = w / 2 - (m.actualBoundingBoxRight - m.actualBoundingBoxLeft) / 2, y = h / 2 + (A - D) * k / 2;
+      ctx.globalAlpha = alpha; ctx.fillStyle = colour; ctx.fillText(c, x, y); ctx.globalAlpha = 1;
+      return;
+    }
     ctx.font = `${size}px ${FAM}`;
     let m = ctx.measureText(c);
     let L = m.actualBoundingBoxLeft, Rr = m.actualBoundingBoxRight, A = m.actualBoundingBoxAscent, D = m.actualBoundingBoxDescent;
@@ -196,7 +213,6 @@
       ctx.font = `${size * k}px ${FAM}`; m = ctx.measureText(c);
       L = m.actualBoundingBoxLeft; Rr = m.actualBoundingBoxRight; A = m.actualBoundingBoxAscent; D = m.actualBoundingBoxDescent;
     }
-    ctx.textAlign = 'left'; ctx.textBaseline = 'alphabetic';
     const x = w / 2 - (Rr - L) / 2, y = h / 2 + (A - D) / 2;
     ctx.globalAlpha = alpha; ctx.fillStyle = colour; ctx.fillText(c, x, y); ctx.globalAlpha = 1;
   }
@@ -454,7 +470,7 @@
   }
   function renderChannel() {
     if (document.activeElement !== el.chNum) el.chNum.value = String(ch);
-    el.chName.textContent = ch === 1 ? 'THE VERSE' : 'OPEN CHANNEL';
+    el.chName.textContent = ch === 1 ? 'THE VERSE, SIGNED' : ch === 2 ? 'THE VERSE' : 'OPEN CHANNEL';
     const url = `${location.host}/?ch=${ch}`;
     el.shareUrl.textContent = url;
     renderQR(`${location.origin}/?ch=${ch}`);
@@ -470,13 +486,14 @@
   function renderDial() {
     renderChannel(); renderPresence(); renderSync();
     if (!S) { renderStartState(); return; }
-    const locked = !!S.locked || ch === 1, other = conductorOther();
+    const locked = !!S.locked || ch === 1 || ch === 2, other = conductorOther();
     el.text.readOnly = locked;
     el.text.disabled = !locked && other;
+    { const sb = document.getElementById('sign'); if (sb) { sb.hidden = locked; sb.disabled = !!(other && !locked); } }
     if (document.activeElement !== el.text || Date.now() > textDirtyUntil) {
       if (el.text.value !== S.text && !(document.activeElement === el.text && Date.now() < textDirtyUntil)) el.text.value = S.text || '';
     }
-    el.textNote.textContent = locked ? 'These words are fixed on channel 1.' : other ? '' : 'Up to 3 lines. Everyone on this channel sees edits.';
+    el.textNote.textContent = locked ? `These words are fixed on channel ${ch}.` : other ? '' : 'Up to 3 lines. Everyone on this channel sees edits.';
     el.textNote.className = 'note';
     const st = S.settings || {};
     const tog = st.formation === 'together';
@@ -572,7 +589,16 @@
     clearTimeout(setTimer);
     setTimer = setTimeout(() => send({ t: 'set', text: el.text.value }), 400);
   });
-  el.text.addEventListener('blur', () => { clearTimeout(setTimer); if (S && !S.locked && ch !== 1) send({ t: 'set', text: el.text.value }); textDirtyUntil = 0; });
+  const SIGN = '༼つ◕‿◕‿◕༽つ';
+  const signBtn = $('sign');
+  if (signBtn) signBtn.addEventListener('click', () => {
+    if (!S || S.locked || el.text.disabled) return;
+    let v = el.text.value.replace(/\s+$/, '');
+    if (v.includes(SIGN)) v = v.replace(' ' + SIGN, '').replace(SIGN, '').replace(/\s+$/, '');
+    else v = v + ' ' + SIGN;
+    el.text.value = v; el.text.dispatchEvent(new Event('input'));
+  });
+  el.text.addEventListener('blur', () => { clearTimeout(setTimer); if (S && !S.locked && ch > 2) send({ t: 'set', text: el.text.value }); textDirtyUntil = 0; });
 
   // formation + shared settings
   function sendSettings(part) {
@@ -647,6 +673,7 @@
     get offset() { return offset; }, get rtt() { return bestRtt; }, get state() { return S; },
     get mode() { return mode; }, get ch() { return ch; }, get armed() { return armed; },
     schedule: (run, part) => buildSchedule(run, part || 0),
+    drawLetter,
   };
 
   store.set('ch', ch);

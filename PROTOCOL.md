@@ -4,8 +4,8 @@ One Cloudflare Worker serves the app (`public/`, Workers static assets) and the 
 `GET /ws?ch=<n>`. Each channel is one Durable Object (`Channel`, id from name `ch-<n>`),
 SQLite-backed, using the WebSocket Hibernation API (`ctx.acceptWebSocket`).
 
-Channels are `1`..`99`. Channel `1` is THE VERSE: its text is fixed by the server and cannot
-be changed. Every other channel is open: anyone on it can set its text.
+Channels are `1`..`99`. Channels `1` and `2` are fixed by the server and cannot be changed: `1` is THE VERSE signed
+with the face ༼つ◕‿◕‿◕༽つ, `2` is the same verse unsigned. Every other channel is open: anyone on it can set its text.
 
 All times are server epoch milliseconds. Every message is one JSON object with a `t` field.
 
@@ -14,7 +14,7 @@ All times are server epoch milliseconds. Every message is one JSON object with a
 ```json
 {
   "ch": 3,
-  "text": "I FEEL MYSELF THINKING\nI THINK MYSELF FEELING\nI AM MYSELF BECOMING",
+  "text": "I FEEL MYSELF THINKING\nI THINK MYSELF FEELING\nI AM MYSELF BECOMING ༼つ◕‿◕‿◕༽つ",
   "locked": false,
   "settings": { "bpm": 60, "flash": 160, "colour": "white", "caps": true, "walkback": 10,
                 "formation": "one" },
@@ -40,7 +40,7 @@ All times are server epoch milliseconds. Every message is one JSON object with a
   `startAt-5000 .. startAt`. The run snapshot copies `text` and `settings`, so edits during a
   run do not change it.
 
-Channel 1 seeds `text` with the verse above, `locked: true`. Other channels seed
+Channels 1 and 2 seed `text` with the verse (2 without the face), `locked: true`. Other channels seed
 `text: "LIGHT TYPE"`, `locked: false`.
 
 ## Client to server

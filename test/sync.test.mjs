@@ -2,7 +2,7 @@
 // Needs node >= 22 (built-in WebSocket and fetch).
 const BASE = (process.env.LT_URL || "http://localhost:8787").replace(/\/$/, "");
 const WS = BASE.replace(/^http/, "ws");
-const CH = process.env.LT_CH || String(2 + Math.floor(Math.random() * 90)); // random channel keeps reruns clean
+const CH = process.env.LT_CH || String(3 + Math.floor(Math.random() * 90)); // random channel keeps reruns clean
 
 let fails = 0;
 const ok = (c, msg) => { console.log((c ? "ok   " : "FAIL ") + msg); if (!c) fails++; };

@@ -9,8 +9,9 @@ Phones on the same channel stay in sync. Anyone on a channel presses START: ever
 5 4 3 2 1, then they all flash their letters on the same beat, so one person or a whole group can draw
 into the same exposure.
 
-- **Channel 1** is fixed: *I FEEL MYSELF THINKING / I THINK MYSELF FEELING / I AM MYSELF BECOMING*.
-- **Channels 2-99** are open: anyone on the channel can write the line.
+- **Channel 1** is fixed: *I FEEL MYSELF THINKING / I THINK MYSELF FEELING / I AM MYSELF BECOMING ༼つ◕‿◕‿◕༽つ*. The face at the end is the signature, walked one glyph per step like the letters. On open channels, SIGN IT adds it to the last line.
+- **Channel 2** is the same verse without the face, also fixed.
+- **Channels 3-99** are open: anyone on the channel can write the line.
 - **One walker**: lines play one after another, with time between them to walk back in the dark.
 - **Together**: one walker per line, all lines at once, each phone held at its own height.
 - **Conduct**: one phone can take the baton for a channel; then only it can start, stop or edit.

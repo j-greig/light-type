@@ -1,6 +1,10 @@
 import { DurableObject } from "cloudflare:workers";
 
-const VERSE = "I FEEL MYSELF THINKING\nI THINK MYSELF FEELING\nI AM MYSELF BECOMING";
+const SIGN = "༼つ◕‿◕‿◕༽つ";
+const VERSE_PLAIN = "I FEEL MYSELF THINKING\nI THINK MYSELF FEELING\nI AM MYSELF BECOMING";
+const VERSE = VERSE_PLAIN + " " + SIGN;
+// fixed channels: 1 = the verse signed with the face, 2 = the same verse unsigned
+const FIXED = { 1: VERSE, 2: VERSE_PLAIN };
 const COLOURS = ["white", "warm", "yellow", "cyan", "magenta", "cycle"];
 const FORMATIONS = ["one", "together"];
 const DEFAULT_SETTINGS = { bpm: 60, flash: 160, colour: "white", caps: true, walkback: 10, formation: "one" };
@@ -80,11 +84,12 @@ export class Channel extends DurableObject {
   }
 
   init(ch) {
-    if (this.s) return;
+    // fixed channels always carry their current text, even when older text is stored
+    if (this.s) { if (FIXED[this.s.ch]) { this.s.text = FIXED[this.s.ch]; this.s.locked = true; } return; }
     this.s = {
       ch,
-      text: ch === 1 ? VERSE : "LIGHT TYPE",
-      locked: ch === 1,
+      text: FIXED[ch] || "LIGHT TYPE",
+      locked: !!FIXED[ch],
       settings: { ...DEFAULT_SETTINGS },
       conductor: null,
       run: null,
