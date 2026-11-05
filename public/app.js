@@ -195,13 +195,15 @@
     const size = probe * Math.min((w * fr) / hw, (h * fr) / hh);
     ctx.textAlign = 'left'; ctx.textBaseline = 'alphabetic';
     if (!isPlain(c)) {
-      // one size and one baseline for every glyph of the signature
+      // the face is set like a terminal line: every glyph gets the same cell (the widest advance),
+      // centred in it, one shared size and baseline. Walked on close knots one phone-width apart,
+      // the cells butt together and the face reads with no gaps between its parts.
       let A = 0, D = 0, W = 0;
-      for (const g of Array.from(SIGN_SET + c)) { const m = ctx.measureText(g); A = Math.max(A, m.actualBoundingBoxAscent); D = Math.max(D, m.actualBoundingBoxDescent); W = Math.max(W, m.actualBoundingBoxLeft + m.actualBoundingBoxRight); }
-      const k = Math.min((w * fr) / (W || 1), (h * fr) / ((A + D) || 1));
+      for (const g of Array.from(SIGN_SET + c)) { const m = ctx.measureText(g); A = Math.max(A, m.actualBoundingBoxAscent); D = Math.max(D, m.actualBoundingBoxDescent); W = Math.max(W, m.width, m.actualBoundingBoxLeft + m.actualBoundingBoxRight); }
+      const k = Math.min(w / (W || 1), (h * fr) / ((A + D) || 1));
       ctx.font = `${probe * k}px ${FAM}`;
       const m = ctx.measureText(c);
-      const x = w / 2 - (m.actualBoundingBoxRight - m.actualBoundingBoxLeft) / 2, y = h / 2 + (A - D) * k / 2;
+      const x = w / 2 - m.width / 2, y = h / 2 + (A - D) * k / 2;
       ctx.globalAlpha = alpha; ctx.fillStyle = colour; ctx.fillText(c, x, y); ctx.globalAlpha = 1;
       return;
     }
@@ -263,7 +265,8 @@
   const CUE = {
     count: (t) => tone(880, 0.12, t),
     go: (t) => tone(440, 0.6, t, 0.3),
-    glyph: (t, e) => e.c === ' ' ? tone(520, 0.04, t, 0.18, 'square') : tone(1400, 0.04, t, 0.18, 'square'),
+    // spaces: low click; letters: high click; face glyphs: soft tick = small step to the next close knot
+    glyph: (t, e) => e.c === ' ' ? tone(520, 0.04, t, 0.18, 'square') : isPlain(e.c) ? tone(1400, 0.04, t, 0.18, 'square') : tone(1000, 0.05, t, 0.2, 'sine'),
     line: (t) => { tone(523, 0.12, t, 0.22); tone(659, 0.12, t + 0.18, 0.22); tone(784, 0.18, t + 0.36, 0.22); },
     end: (t) => { tone(660, 0.35, t, 0.25); tone(440, 0.6, t + 0.38, 0.25); },
   };
@@ -545,7 +548,7 @@
     L.forEach((line, li) => {
       const row = document.createElement('div'); row.className = 'phone-line' + (part >= 0 && li !== part ? ' dim' : '');
       line.forEach((c, k) => {
-        const ph = document.createElement('div'); ph.className = 'phone' + (c === ' ' ? ' space' : '');
+        const ph = document.createElement('div'); ph.className = 'phone' + (c === ' ' ? ' space' : '') + (c !== ' ' && !isPlain(c) ? ' close' : '');
         ph.textContent = c === ' ' ? '' : c;
         ph.style.color = colourFor(colourName, part >= 0 ? k : idx);
         row.appendChild(ph); idx++;

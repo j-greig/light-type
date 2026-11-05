@@ -163,3 +163,7 @@ details[open] summary::before { content: "− "; }
 .sign-btn { justify-self: start; margin-top: 8px; min-height: 56px; padding: 0 18px; background: transparent; color: var(--fg);
   border: 2px solid var(--line); border-radius: 10px; font-size: 20px; }
 .sign-btn:active { border-color: var(--accent); color: var(--accent); }
+
+/* face glyphs: close knots, one phone-width apart, so the phones touch in the strip as in the photo */
+.phone.close { margin-left: -6px; border-color: #3a3a1a; }
+.phone.close + .phone.close { margin-left: -8px; }
