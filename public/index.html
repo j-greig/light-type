@@ -134,7 +134,8 @@
 <section id="arm" class="screen">
   <button id="armBtn" class="arm-btn" type="button">
     <span class="arm-big">TAP<br>TO<br>ARM</span>
-    <span class="arm-small">sound on · screen stays awake</span>
+    <span class="arm-small">turns sound on and keeps the screen awake</span>
+    <span class="arm-next">NEXT: CHANNEL · WORDS · SETTINGS<br>nothing lights up yet</span>
   </button>
 </section>
 
@@ -177,6 +178,31 @@
     </div>
   </section>
 
+  <details id="settings">
+    <summary>SETTINGS</summary>
+    <div class="grid">
+      <label class="field"><span>STEPS PER MINUTE</span><input id="bpm" type="number" inputmode="numeric" min="20" max="120" step="5"></label>
+      <label class="field"><span>FLASH, MS</span><input id="flash" type="number" inputmode="numeric" min="40" max="1000" step="20"></label>
+      <label class="field"><span>WALK BACK, S</span><input id="walkback" type="number" inputmode="numeric" min="0" max="30" step="1"></label>
+      <label class="field"><span>COLOUR</span>
+        <select id="colour">
+          <option value="white">white</option>
+          <option value="warm">warm</option>
+          <option value="yellow">yellow</option>
+          <option value="cyan">cyan</option>
+          <option value="magenta">magenta</option>
+          <option value="cycle">cycle</option>
+        </select></label>
+      <label class="check"><input id="caps" type="checkbox"> ALL CAPS</label>
+    </div>
+    <div class="note">The settings above are shared by every phone on this channel.</div>
+    <div class="grid">
+      <label class="field"><span>LETTER SIZE %</span><input id="size" type="number" inputmode="numeric" min="20" max="100" step="5"></label>
+      <label class="field"><span>LIGHT LEVEL %</span><input id="level" type="number" inputmode="numeric" min="5" max="100" step="5"></label>
+    </div>
+    <div class="note">Letter size and light level are for this phone only. Set the phone's own brightness too.</div>
+  </details>
+
   <section class="go">
     <div id="wait" class="wait" hidden>
       <div class="wait-k">NEXT RUN</div>
@@ -215,30 +241,6 @@
     <div id="phones" class="phones"></div>
   </section>
 
-  <details id="settings">
-    <summary>SETTINGS</summary>
-    <div class="grid">
-      <label class="field"><span>STEPS PER MINUTE</span><input id="bpm" type="number" inputmode="numeric" min="20" max="120" step="5"></label>
-      <label class="field"><span>FLASH, MS</span><input id="flash" type="number" inputmode="numeric" min="40" max="1000" step="20"></label>
-      <label class="field"><span>WALK BACK, S</span><input id="walkback" type="number" inputmode="numeric" min="0" max="30" step="1"></label>
-      <label class="field"><span>COLOUR</span>
-        <select id="colour">
-          <option value="white">white</option>
-          <option value="warm">warm</option>
-          <option value="yellow">yellow</option>
-          <option value="cyan">cyan</option>
-          <option value="magenta">magenta</option>
-          <option value="cycle">cycle</option>
-        </select></label>
-      <label class="check"><input id="caps" type="checkbox"> ALL CAPS</label>
-    </div>
-    <div class="note">The settings above are shared by every phone on this channel.</div>
-    <div class="grid">
-      <label class="field"><span>LETTER SIZE %</span><input id="size" type="number" inputmode="numeric" min="20" max="100" step="5"></label>
-      <label class="field"><span>LIGHT LEVEL %</span><input id="level" type="number" inputmode="numeric" min="5" max="100" step="5"></label>
-    </div>
-    <div class="note">Letter size and light level are for this phone only. Set the phone's own brightness too.</div>
-  </details>
 
   <section class="share">
     <div class="h">SHARE THIS CHANNEL</div>

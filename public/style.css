@@ -240,3 +240,4 @@ input[type=time] { -webkit-appearance: none; appearance: none; }
 .turn-small { font-size: 18px; color: var(--fg); max-width: 32ch; }
 .toast.calm { color: var(--accent); border-color: var(--accent); }
 @media (prefers-reduced-motion: reduce) { .pointer b, .turn-phone { animation: none; } }
+.arm-next { font-size: 16px; color: var(--fg); text-align: center; line-height: 1.5; letter-spacing: 0.06em; }
