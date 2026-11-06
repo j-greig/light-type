@@ -168,6 +168,13 @@ try {
         const two = "I FEEL MYSELF THINKING\nI THINK MYSELF FEELING";
         const want = n === "1" ? two : two + "\nI AM MYSELF BECOMING";
         ok(sf.text === want && sf.locked === true && !sf.text.includes("༼"), `${kind || "knot"} ch ${n} is the ${n === "1" ? "two" : "three"}-line verse, no face`);
+        // a settings change rebroadcasts state: the fixed text must come back exactly
+        for (const formation of ["together", "one"]) {
+          const seen = f.next((m) => m.t === "state" && m.settings.formation === formation);
+          f.send({ t: "settings", settings: { formation } });
+          const st = await seen;
+          ok(st.text === want && st.locked === true, `${kind || "knot"} ch ${n}: state after formation ${formation} carries the fixed verse`);
+        }
         f.close();
       }
     }
@@ -215,36 +222,35 @@ try {
     const sk2 = await (await fetch(`${BASE}/api/state?ch=${SW}`)).json();
     ok(sk2.settings.bpm === sk.settings.bpm && !("speed" in sk2.settings), "sweep settings do not reach the knot channel");
 
-    // dur honoured: runEnd = startAt + dur + 1500
+    // dur: computed by the server from its snapshot (speed 2.3, vga16, light 2, together, one line);
+    // the run is held until startAt + dur + 6500 (the phones' black tail)
+    const n = Array.from(new Intl.Segmenter(undefined, { granularity: "grapheme" }).segment(swText)).length;
+    const want = Math.ceil(1000 + ((n * 9 - 0 + 2) / (2.3 * 9)) * 1000 + 400);
     const rs = Promise.all([s, s2].map((x) => x.next((m) => m.t === "run")));
-    s.send({ t: "start", dur: 2500 });
+    s.send({ t: "start", dur: 99999 });
     const [r1, r2] = await rs;
-    ok(r1.run.id === r2.run.id && r1.run.dur === 2500, "sweep start carries dur");
+    ok(r1.run.id === r2.run.id && r1.run.dur === want, `sweep run dur from the server snapshot (${r1.run.dur} = ${want}), client dur ignored`);
     s2.msgs = []; s2.send({ t: "start" });
     ok((await s2.wait((m) => m.t === "error")).code === "running", "sweep start while running refused");
-    const endAt = r1.run.startAt + 2500 + 1500;
+    const endAt = r1.run.startAt + r1.run.dur + 6500;
+    await sleep(Math.max(0, r1.run.startAt + r1.run.dur + 2000 - Date.now()));
+    s2.msgs = []; s2.send({ t: "start" });
+    ok((await s2.wait((m) => m.t === "error")).code === "running", "start refused during the black tail after the end tone");
     await sleep(Math.max(0, endAt - Date.now() - 700));
     const mid = await (await fetch(`${BASE}/api/state?ch=${SW}&kind=sweep`)).json();
-    ok(mid.run && mid.run.id === r1.run.id, "run still held just before startAt + dur + 1500");
+    ok(mid.run && mid.run.id === r1.run.id, "run still held just before startAt + dur + 6500");
     await sleep(Math.max(0, endAt - Date.now() + 400));
     const after = await (await fetch(`${BASE}/api/state?ch=${SW}&kind=sweep`)).json();
-    ok(after.run === null, "run cleared after startAt + dur + 1500");
+    ok(after.run === null, "run cleared after startAt + dur + 6500");
     const ksr = await (await fetch(`${BASE}/api/state?ch=${SW}`)).json();
     ok(ksr.run === null, "sweep run never reached the knot channel");
-
-    // dur clamped; no dur gives an estimate
-    const rc = s2.next((m) => m.t === "run");
-    s.send({ t: "start", dur: 99 });
-    ok((await rc).run.dur === 2000, "dur clamped to 2000 ms");
-    s.send({ t: "stop" }); await s2.next((m) => m.t === "stop");
-    const re = s2.next((m) => m.t === "run");
-    s.send({ t: "start" });
-    const est = (await re).run.dur;
-    // text has 2 + n graphemes at speed 2.3, one line, gap 3
-    const n = Array.from(new Intl.Segmenter(undefined, { granularity: "grapheme" }).segment(swText)).length;
-    ok(est === Math.ceil(1000 + n * 1000 / 2.3 + 3000 + 2000), `no dur: estimate ${est} ms`);
-    s.send({ t: "stop" }); await sleep(200);
-
+    // colour tint (the default on new fixed sweep channels) is a sweep colour only
+    const tw = s2.next((m) => m.t === "state" && m.settings.colour === "tint");
+    s.send({ t: "settings", settings: { colour: "tint" } });
+    ok((await tw).settings.colour === "tint", "sweep channels take colour tint");
+    const tk = k.next((m) => m.t === "state");
+    k.send({ t: "settings", settings: { colour: "tint" } });
+    ok((await tk).settings.colour !== "tint", "knot channels refuse colour tint");
     [k, s, s2].forEach((x) => x.close());
   }
 

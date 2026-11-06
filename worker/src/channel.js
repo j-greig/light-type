@@ -5,6 +5,8 @@ const VERSE_THREE = VERSE_TWO + "\nI AM MYSELF BECOMING";
 // fixed channels, the same on both kinds: 1 = the two-line verse, 2 = the three-line verse
 const FIXED = { 1: VERSE_TWO, 2: VERSE_THREE };
 const COLOURS = ["white", "warm", "yellow", "cyan", "magenta", "cycle"];
+// sweep only: "tint" = line 1 warm near-white, line 2 cool near-white (Zilla's choice for the fixed channels)
+const SWEEP_COLOURS = [...COLOURS, "tint"];
 const FORMATIONS = ["one", "together"];
 // knot channels (DO "ch-N", the app at /simple)
 const DEFAULT_SETTINGS = { bpm: 60, flash: 160, colour: "white", caps: true, walkback: 10, formation: "one" };
@@ -13,7 +15,10 @@ const SWEEP_SETTINGS = { speed: 2, dir: "alt", gap: 3, font: "dot7", dots: "roun
 const DIRS = ["ltr", "rtl", "alt"];
 const FONTS = ["dot7", "vga16"];
 const DOTS = ["round", "square"];
-const defaultsFor = (kind) => ({ ...(kind === "sweep" ? SWEEP_SETTINGS : DEFAULT_SETTINGS) });
+const defaultsFor = (kind, ch) => kind === "sweep"
+  ? { ...SWEEP_SETTINGS, ...(FIXED[ch] ? { colour: "tint" } : {}) }
+  : { ...DEFAULT_SETTINGS };
+const SWEEP_TAIL_MS = 6500; // the phones' 6 s black tail after the end tone, plus slack: no new START during it
 
 const LEAD_MS = 5400; // 5 s countdown + 400 ms margin
 const CONDUCTOR_GRACE_MS = 30 * 60 * 1000;
@@ -59,7 +64,7 @@ function mergeSweep(base, patch) {
   if (FONTS.includes(patch.font)) s.font = patch.font;
   if (DOTS.includes(patch.dots)) s.dots = patch.dots;
   if (num(patch.light)) s.light = clamp(Math.round(patch.light), 1, 4);
-  if (COLOURS.includes(patch.colour)) s.colour = patch.colour;
+  if (SWEEP_COLOURS.includes(patch.colour)) s.colour = patch.colour;
   if (typeof patch.caps === "boolean") s.caps = patch.caps;
   if (FORMATIONS.includes(patch.formation)) s.formation = patch.formation;
   return s;
@@ -95,11 +100,17 @@ function runDuration(text, settings) {
   return Math.ceil(lastLit + beat + 400 + settings.flash + 500);
 }
 
-// Sweep run length after startAt when the client sends no `dur`: an estimate on the long side.
-function sweepEstimate(text, settings) {
-  const lines = text.split(/\n/).map((l) => l.replace(/\s+/g, " ").trim()).filter(Boolean);
-  const n = lines.reduce((a, l) => a + graphemes(l).length, 0);
-  return Math.ceil(1000 + (n * 1000) / settings.speed + lines.length * settings.gap * 1000 + 2000);
+// Sweep run length: ms from startAt to the end tone, the same schedule the phones play (PROTOCOL "Sweep schedule").
+function sweepDur(text, settings) {
+  let lines = text.split(/\n/).map((l) => l.replace(/\s+/g, " ").trim()).filter(Boolean);
+  if (settings.caps) lines = lines.map((l) => l.toUpperCase());
+  const vga = settings.font === "vga16", cc = vga ? 9 : 6, gapCols = vga ? 0 : 1;
+  const colRate = settings.speed * cc;
+  const lineMs = lines.map((l) => ((graphemes(l).length * cc - gapCols + settings.light) / colRate) * 1000);
+  const body = settings.formation === "together"
+    ? Math.max(0, ...lineMs)
+    : lineMs.reduce((a, b) => a + b, 0) + Math.max(0, lines.length - 1) * settings.gap * 1000;
+  return Math.ceil(1000 + body + 400);
 }
 
 function randomId() {
@@ -129,7 +140,7 @@ export class Channel extends DurableObject {
       kind,
       text: FIXED[ch] || "LIGHT TYPE",
       locked: !!FIXED[ch],
-      settings: defaultsFor(kind),
+      settings: defaultsFor(kind, ch),
       conductor: null,
       run: null,
       runEnd: 0,
@@ -142,8 +153,12 @@ export class Channel extends DurableObject {
     await this.schedule();
   }
 
+  // fixed channels always go out with their built-in text, whatever is stored (an older deploy's verse)
   publicState() {
-    const { ch, kind, text, locked, settings, conductor, run } = this.s;
+    const { ch, kind, settings, conductor } = this.s;
+    const fixed = FIXED[ch];
+    let { text, locked, run } = this.s;
+    if (fixed) { text = fixed; locked = true; if (run && run.text !== fixed) run = { ...run, text: fixed }; }
     return { ch, kind, text, locked, settings, conductor, run };
   }
 
@@ -341,14 +356,14 @@ export class Channel extends DurableObject {
         // play it at that time even with no signal
         const at = Number(m.at);
         const startAt = Number.isFinite(at) && at >= now + 5000 && at <= now + 6 * 3600 * 1000 ? Math.round(at) : now + LEAD_MS;
-        const text = this.s.text;
+        const text = FIXED[this.s.ch] || this.s.text;
         const settings = { ...this.s.settings };
         if (this.s.kind === "sweep") {
-          // `dur`: ms from startAt to the end tone, computed by the client from the same schedule
-          const d = Number(m.dur);
-          const dur = Number.isFinite(d) ? clamp(Math.round(d), 2000, 1200000) : sweepEstimate(text, settings);
+          // `dur` (startAt to the end tone) comes from this snapshot, not from the client, which may hold older
+          // settings; the run is held through the phones' black tail so no new START lights a closing shutter
+          const dur = clamp(sweepDur(text, settings), 2000, 1200000);
           this.s.run = { id: randomId(), startAt, text, settings, dur };
-          this.s.runEnd = startAt + dur + 1500;
+          this.s.runEnd = startAt + dur + SWEEP_TAIL_MS;
         } else {
           this.s.run = { id: randomId(), startAt, text, settings };
           this.s.runEnd = startAt + runDuration(text, settings);
