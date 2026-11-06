@@ -1,7 +1,7 @@
 {
   "name": "Light Type",
   "short_name": "Light Type",
-  "description": "Turns a phone into a print head for a long-exposure light drawing.",
+  "description": "Shows the words one dot column at a time for a long-exposure light drawing.",
   "start_url": "/?source=pwa",
   "scope": "/",
   "display": "standalone",

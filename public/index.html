@@ -1,0 +1,287 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Light Type</title>
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta name="description" content="A phone shows the words one dot column at a time. Walk it past a camera on a long exposure and the photo shows the whole line.">
+<meta name="theme-color" content="#000000">
+<meta name="color-scheme" content="dark">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Light Type">
+<meta name="format-detection" content="telephone=no">
+<link rel="manifest" href="/manifest.webmanifest">
+<link rel="apple-touch-icon" href="/icons/apple-touch-icon.png">
+<link rel="icon" type="image/png" sizes="192x192" href="/icons/icon-192.png">
+<link rel="preload" href="/fonts/Px437_IBM_VGA_9x16.ttf" as="font" type="font/ttf" crossorigin>
+<link rel="stylesheet" href="/style.css">
+</head>
+<body>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <defs>
+    <symbol id="i-share" viewBox="0 0 24 24"><path d="M12 3v11M8 7l4-4 4 4M8.5 10H6.5v10h11V10h-2" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+    <symbol id="i-more" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9.5" fill="none" stroke="currentColor" stroke-width="1.6"/><circle cx="7.5" cy="12" r="1.4" fill="currentColor"/><circle cx="12" cy="12" r="1.4" fill="currentColor"/><circle cx="16.5" cy="12" r="1.4" fill="currentColor"/></symbol>
+    <symbol id="i-add" viewBox="0 0 24 24"><rect x="3.5" y="3.5" width="17" height="17" rx="4" fill="none" stroke="currentColor" stroke-width="1.7"/><path d="M12 8v8M8 12h8" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></symbol>
+    <symbol id="i-rot" viewBox="0 0 24 24"><path d="M19.5 12a7.5 7.5 0 1 1-2.2-5.3" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/><path d="M17.6 3.4v3.5h-3.5" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/><rect x="9" y="11.2" width="6" height="4.8" rx="1" fill="currentColor"/><path d="M10.2 11.2V10a1.8 1.8 0 0 1 3.6 0v1.2" fill="none" stroke="currentColor" stroke-width="1.4"/></symbol>
+  </defs>
+</svg>
+
+<!-- INSTALL: phones in a browser tab -->
+<section id="install" class="screen guide" hidden>
+  <div class="guide-head">
+    <div class="kicker">LIGHT TYPE <span class="faces">༼つ◕‿◕‿⚆༽つ ༼つ⚆‿◕‿◕༽つ</span></div>
+    <h1 class="guide-title">ADD IT TO THE HOME SCREEN</h1>
+    <p class="lede">From the Home Screen, Light Type fills the screen. In Safari, the browser bar stays lit and shows in the photo.</p>
+  </div>
+
+  <ol class="steps" data-kind="safari">
+    <li><span class="n">1</span><span>Tap <b>Share</b> <svg class="ico"><use href="#i-share"/></svg> (in the bottom bar, or under <b>⋯</b>).</span></li>
+    <li><span class="n">2</span><span>Tap <b>Add to Home Screen</b> <span class="nw"><svg class="ico"><use href="#i-add"/></svg>,</span> then <b>Add</b>.</span></li>
+    <li><span class="n">3</span><span>Open <b>Light Type</b> from the Home Screen.</span></li>
+  </ol>
+
+  <div class="steps" data-kind="ios-other" hidden>
+    <ol>
+      <li><span class="n">1</span><span>Tap <b>Share</b> <svg class="ico"><use href="#i-share"/></svg> (in the bottom bar, or under <b>⋯</b>).</span></li>
+      <li><span class="n">2</span><span>Tap <b>Add to Home Screen</b> <span class="nw"><svg class="ico"><use href="#i-add"/></svg>,</span> then <b>Add</b>.</span></li>
+      <li><span class="n">3</span><span>Open <b>Light Type</b> from the Home Screen.</span></li>
+    </ol>
+    <p class="note">No Add to Home Screen? Open the link in Safari.</p>
+    <button class="btn wide copyLink" type="button">COPY THE LINK</button>
+  </div>
+
+  <div class="steps" data-kind="inapp" hidden>
+    <p>Open this page in Safari: tap <b>⋯</b>, then <b>Open in Safari</b>.</p>
+    <button class="btn wide copyLink" type="button">COPY THE LINK</button>
+  </div>
+
+  <div class="steps" data-kind="android" hidden>
+    <button id="installBtn" class="start" type="button" hidden>INSTALL</button>
+    <ol>
+      <li><span class="n">1</span><span>Tap <b>⋮</b>.</span></li>
+      <li><span class="n">2</span><span>Tap <b>Install app</b> or <b>Add to Home screen</b>.</span></li>
+      <li><span class="n">3</span><span>Open <b>Light Type</b> from the Home screen.</span></li>
+    </ol>
+  </div>
+
+  <div class="guide-foot">
+    <button id="skipInstall" class="btn ghost wide" type="button">USE IT IN THE BROWSER</button>
+    <p class="note">The browser bar shows in the photo.</p>
+  </div>
+</section>
+
+<!-- CHECK: once per phone, and from MORE > SETUP -->
+<section id="check" class="screen guide" hidden>
+  <div class="guide-head">
+    <div class="kicker">THIS PHONE</div>
+    <h1 class="guide-title">BEFORE THE PHOTO</h1>
+  </div>
+  <ol class="checks">
+    <li><b>DO NOT DISTURB ON</b><span>A notification lights the screen and shows in the photo.</span></li>
+    <li><b>BRIGHTNESS FULL, AUTO-BRIGHTNESS OFF</b><span>Auto-Brightness dims the screen in the dark. iPhone: Settings › Accessibility › Display &amp; Text Size.</span><span>Phones with an LCD screen (iPhone SE, XR, 11) glow grey on black and leave a faint band: lower the brightness.</span></li>
+    <li><b>TAPE OVER THE CLOCK</b><span>The clock and battery at the top stay lit and draw a line across the photo. A strip of black tape covers them.</span></li>
+  </ol>
+  <div class="check-tests">
+    <button id="testSound" class="btn ghost wide" type="button">TEST SOUND</button>
+    <p class="note">No beeps? Turn the volume up and Silent mode off.</p>
+    <button class="btn ghost wide testLight" type="button">HOLD TO TEST THE LIGHT</button>
+  </div>
+  <button id="checkDone" class="start" type="button">READY</button>
+</section>
+
+<!-- DIAL -->
+<main id="dial" class="screen" hidden>
+  <div class="topbar">
+    <span id="dot" class="dot off" aria-label="offline"></span>
+    <span id="here" class="here">offline</span>
+    <span id="sync" class="sync">sync …</span>
+  </div>
+  <button id="soundBar" class="soundbar" type="button">TAP ANYWHERE TO TURN SOUND ON<small>iPhone plays no sound until you touch the screen</small></button>
+
+  <section class="channel" aria-label="Channel">
+    <div class="ch-label">CHANNEL</div>
+    <div class="ch-row">
+      <button id="chDown" class="ch-step" type="button" aria-label="Previous channel">−</button>
+      <input id="chNum" class="ch-num" type="text" inputmode="numeric" pattern="[0-9]*" maxlength="2" value="1" aria-label="Channel number">
+      <button id="chUp" class="ch-step" type="button" aria-label="Next channel">+</button>
+    </div>
+    <div id="chName" class="ch-name">THE VERSE</div>
+  </section>
+
+  <section class="words">
+    <textarea id="text" rows="3" spellcheck="false" autocapitalize="characters" autocomplete="off" maxlength="200" aria-label="The words, up to 3 lines"></textarea>
+    <div id="textNote" class="note"></div>
+    <button id="sign" type="button" class="sign-btn" aria-label="Sign the line with the Wib&amp;Wob face">SIGN IT ༼つ◕‿◕‿◕༽つ</button>
+  </section>
+
+  <section class="preview" aria-label="The photo">
+    <div class="h">IN THE PHOTO</div>
+    <div class="pv-box"><canvas id="pv" aria-label="The lines as the photo shows them"></canvas></div>
+    <div id="pvRows" class="pv-rows"></div>
+    <div class="note">Lengths and times are an estimate for this phone.</div>
+  </section>
+
+  <section class="speed" aria-label="Speed">
+    <div class="h">SPEED</div>
+    <div class="stepper">
+      <button id="spDown" class="st-btn" type="button" aria-label="Slower">−</button>
+      <div class="st-val"><span id="spVal">2.0</span><small>letters a second</small></div>
+      <button id="spUp" class="st-btn" type="button" aria-label="Faster">+</button>
+    </div>
+    <div id="spWalk" class="sp-walk">Walk about 24 cm a second.</div>
+  </section>
+
+  <section class="go">
+    <div id="wait" class="wait" hidden>
+      <div class="wait-k">NEXT RUN</div>
+      <div id="waitT" class="wait-t">--:--:--</div>
+      <div id="waitIn" class="wait-in"></div>
+      <div class="note">Keep Light Type open with the screen on. It goes black 7 seconds before.</div>
+    </div>
+    <div class="start-row">
+      <button id="startBtn" class="start" type="button">START</button>
+      <button id="testBtn" class="test" type="button" aria-label="Test pattern on this phone only">TEST</button>
+    </div>
+    <div id="runRow" class="run-row" hidden>
+      <button id="rejoinBtn" class="btn" type="button">REJOIN</button>
+      <button id="stopBtn" class="btn warn" type="button">STOP FOR ALL</button>
+    </div>
+    <div id="startNote" class="note"></div>
+    <div id="testNote" class="note" hidden>Squares wider than tall: walk slower. Narrower: walk faster.</div>
+  </section>
+
+  <details id="settings">
+    <summary>SETTINGS</summary>
+    <div class="set-body">
+      <div class="field"><span>DIRECTION</span>
+        <div class="seg" id="dirSeg" role="group" aria-label="Direction">
+          <button type="button" data-v="ltr" aria-label="Left to right">→</button>
+          <button type="button" data-v="alt" aria-label="Back and forth">⇄</button>
+          <button type="button" data-v="rtl" aria-label="Right to left">←</button>
+        </div>
+      </div>
+      <div class="field"><span>WALKERS</span>
+        <div class="seg" role="group" aria-label="Walkers">
+          <button id="fOne" type="button" aria-pressed="true">ONE WALKER</button>
+          <button id="fTog" type="button" aria-pressed="false">TOGETHER</button>
+        </div>
+        <div id="partRow" class="part-row" hidden>
+          <span class="part-label">MY LINE</span>
+          <div class="seg" id="partSeg" role="group" aria-label="My line"></div>
+        </div>
+      </div>
+      <label class="field"><span>PAUSE BETWEEN LINES, S</span><input id="gap" type="number" inputmode="numeric" min="0" max="30" step="1"></label>
+      <div class="field"><span>LETTERS</span>
+        <div class="seg" id="fontSeg" role="group" aria-label="Letters">
+          <button type="button" data-v="dot7">5×7</button>
+          <button type="button" data-v="vga16">VGA</button>
+        </div>
+      </div>
+      <div class="field"><span>DOTS</span>
+        <div class="seg" id="dotsSeg" role="group" aria-label="Dots">
+          <button type="button" data-v="round">ROUND</button>
+          <button type="button" data-v="square">SQUARE</button>
+        </div>
+      </div>
+      <div class="field"><span>LIGHT WIDTH</span>
+        <div class="seg" id="lightSeg" role="group" aria-label="Light width in dot columns">
+          <button type="button" data-v="1">1</button>
+          <button type="button" data-v="2">2</button>
+          <button type="button" data-v="4">4</button>
+        </div>
+      </div>
+      <div class="grid">
+        <label class="field"><span>COLOUR</span>
+          <select id="colour">
+            <option value="white">white</option>
+            <option value="warm">warm</option>
+            <option value="yellow">yellow</option>
+            <option value="cyan">cyan</option>
+            <option value="magenta">magenta</option>
+            <option value="cycle">cycle</option>
+          </select></label>
+        <label class="check"><input id="caps" type="checkbox"> ALL CAPS</label>
+      </div>
+      <div class="note">These settings are the same on every phone on this channel.</div>
+      <div class="h sub">THIS PHONE ONLY</div>
+      <div class="grid">
+        <label class="field"><span>LETTER HEIGHT %</span><input id="size" type="number" inputmode="numeric" min="20" max="100" step="5"></label>
+        <label class="field"><span>LIGHT LEVEL %</span><input id="level" type="number" inputmode="numeric" min="5" max="100" step="5"></label>
+      </div>
+    </div>
+  </details>
+
+  <details id="more">
+    <summary>MORE</summary>
+    <div class="set-body">
+      <button id="minuteBtn" class="btn wide" type="button">START ON THE NEXT MINUTE</button>
+      <div class="note">Every phone that taps this in the same minute starts on the next :00, with or without signal.</div>
+      <div class="at-row">
+        <label class="field"><span>START AT</span><input id="atTime" type="time" step="60"></label>
+        <button id="atBtn" class="btn" type="button">SET FOR ALL</button>
+      </div>
+      <div class="note">Set it on the wifi. Every phone on this channel keeps the time and starts at it, with or without signal.</div>
+
+      <button id="conductBtn" class="btn ghost wide" type="button" aria-pressed="false">I’M CONDUCTING THIS CHANNEL</button>
+      <label class="field"><span>MY NAME (optional)</span>
+        <input id="name" type="text" maxlength="24" autocomplete="off" spellcheck="false" placeholder="shown when conducting"></label>
+
+      <div class="share">
+        <div class="h">SHARE THIS CHANNEL</div>
+        <div id="shareUrl" class="share-url"></div>
+        <div id="qr" class="qr" aria-label="QR code for this channel"></div>
+      </div>
+
+      <button id="tryBtn" class="btn ghost wide" type="button">TRY IT ON THIS PHONE ONLY</button>
+      <button id="setupBtn" class="btn ghost wide" type="button">SETUP</button>
+      <a class="btn ghost wide link-btn" href="/simple/">LIGHT TYPE SIMPLE ›</a>
+    </div>
+  </details>
+
+  <section class="help">
+    <div class="h">HOW</div>
+    <ol>
+      <li>Everyone opens the same channel. The photographer sets up a tripod and a long exposure (bulb).</li>
+      <li>Press START. Every phone counts 5 4 3 2 1. The photographer opens the shutter on the long low beep.</li>
+      <li>Hold the phone upright, screen to the camera. When the ticks start, walk sideways at an even pace: one tick per letter. With → walk from the camera's left to its right.</li>
+      <li>With ⇄, after the three-note chime, lower the phone a hand's width and walk back the other way.</li>
+      <li>The photographer closes the shutter on the two-note tone. The screen stays black for 6 seconds after it.</li>
+      <li>To stop early, hold three fingers on the screen for 2 seconds.</li>
+    </ol>
+    <p class="note">Start at ISO 200, f/8, manual focus on the walking line. If the dots bloom, turn the phone's light level down.</p>
+  </section>
+
+  <footer class="brand" aria-label="Wib&amp;Wob">
+    <div class="faces">༼つ◕‿◕‿⚆༽つ  ༼つ⚆‿◕‿◕༽つ</div>
+    <pre aria-hidden="true"> _      ___ __  ____   _      __     __
+| | /| / (_) / / __/__| | /| / /__  / /
+| |/ |/ / / _ \&gt; _/_ _/ |/ |/ / _ \/ _ \
+|__/|__/_/____/_____/ |__/|__/ᐠ｡ﻌ｡ᐟ\___/</pre>
+    <a href="https://wibandwob.com" target="_blank" rel="noopener">WIBANDWOB.COM</a>
+    <div id="build" class="build"></div>
+  </footer>
+</main>
+
+<!-- TURN: shown in landscape on a phone, never during a run -->
+<div id="turn" class="turn" hidden>
+  <div class="turn-phone" aria-hidden="true"></div>
+  <div class="turn-big">HOLD IT UPRIGHT</div>
+  <div class="turn-small">Rotation lock in Control Centre keeps it upright. <svg class="ico"><use href="#i-rot"/></svg></div>
+  <button id="turnKeep" class="btn ghost" type="button">KEEP IT SIDEWAYS</button>
+</div>
+
+<!-- RUN: black, one strip of dots -->
+<div id="stage" hidden><canvas id="gc"></canvas></div>
+
+<div id="toast" class="toast" hidden></div>
+
+<!-- keeps the screen awake on iOS versions without the Wake Lock API -->
+<video id="wakeVid" src="/wake.mp4" muted playsinline loop preload="auto" aria-hidden="true"></video>
+
+<script src="/vendor/qrcode.js"></script>
+<script src="/dot7.js"></script>
+<script src="/app.js"></script>
+</body>
+</html>
