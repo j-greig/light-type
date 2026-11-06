@@ -186,7 +186,7 @@ details[open] summary::before { content: "− "; }
 .steps p { margin: 0; }
 .guide-foot { display: grid; gap: 8px; }
 .pointer { position: sticky; bottom: 0; margin-bottom: calc(-1 * max(28px, env(safe-area-inset-bottom, 0px)));
-  padding: 26px 4px max(10px, env(safe-area-inset-bottom, 0px)); display: grid; justify-items: end; gap: 2px;
+  padding: 26px 4px max(10px, env(safe-area-inset-bottom, 0px)); display: grid; justify-items: center; gap: 2px;
   background: linear-gradient(to bottom, rgba(0,0,0,0), #000 55%); color: var(--accent); pointer-events: none; }
 .pointer span { font-size: 13px; color: var(--dim); letter-spacing: 0.1em; }
 .pointer b { font-weight: 400; font-size: 34px; line-height: 1; animation: nudge 1.2s ease-in-out infinite; }
