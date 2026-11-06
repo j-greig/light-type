@@ -1,13 +1,19 @@
 import { DurableObject } from "cloudflare:workers";
 
 const SIGN = "༼つ◕‿◕‿◕༽つ";
-const VERSE_PLAIN = "I FEEL MYSELF THINKING\nI THINK MYSELF FEELING\nI AM MYSELF BECOMING";
-const VERSE_TWO = "I FEEL MYSELF THINKING\nI THINK MYSELF FEELING";
-// fixed channels: 1 = the two-line verse, 2 = the three-line verse
-const FIXED = { 1: VERSE_TWO, 2: VERSE_PLAIN };
+const VERSE = "I FEEL MYSELF THINKING\nI THINK MYSELF FEELING";
+// fixed channels, the same on both kinds: 1 = the verse signed with the face, 2 = the same verse unsigned
+const FIXED = { 1: VERSE + " " + SIGN, 2: VERSE };
 const COLOURS = ["white", "warm", "yellow", "cyan", "magenta", "cycle"];
 const FORMATIONS = ["one", "together"];
+// knot channels (DO "ch-N", the app at /simple)
 const DEFAULT_SETTINGS = { bpm: 60, flash: 160, colour: "white", caps: true, walkback: 10, formation: "one" };
+// sweep channels (DO "sw-N", the app at /)
+const SWEEP_SETTINGS = { speed: 2, dir: "alt", gap: 3, font: "dot7", dots: "round", light: 1, colour: "white", caps: true, formation: "one" };
+const DIRS = ["ltr", "rtl", "alt"];
+const FONTS = ["dot7", "vga16"];
+const DOTS = ["round", "square"];
+const defaultsFor = (kind) => ({ ...(kind === "sweep" ? SWEEP_SETTINGS : DEFAULT_SETTINGS) });
 
 const LEAD_MS = 5400; // 5 s countdown + 400 ms margin
 const CONDUCTOR_GRACE_MS = 30 * 60 * 1000;
@@ -39,7 +45,27 @@ function normaliseText(input) {
 }
 
 // Merge a partial settings object into `base`, clamping. Unknown or invalid fields are ignored.
-function mergeSettings(base, patch) {
+function mergeSettings(kind, base, patch) {
+  return kind === "sweep" ? mergeSweep(base, patch) : mergeKnot(base, patch);
+}
+
+function mergeSweep(base, patch) {
+  const s = { ...base };
+  if (!patch || typeof patch !== "object") return s;
+  const num = (v) => typeof v === "number" && isFinite(v);
+  if (num(patch.speed)) s.speed = clamp(Math.round(patch.speed * 10) / 10, 0.5, 5);
+  if (DIRS.includes(patch.dir)) s.dir = patch.dir;
+  if (num(patch.gap)) s.gap = clamp(Math.round(patch.gap), 0, 30);
+  if (FONTS.includes(patch.font)) s.font = patch.font;
+  if (DOTS.includes(patch.dots)) s.dots = patch.dots;
+  if (num(patch.light)) s.light = clamp(Math.round(patch.light), 1, 4);
+  if (COLOURS.includes(patch.colour)) s.colour = patch.colour;
+  if (typeof patch.caps === "boolean") s.caps = patch.caps;
+  if (FORMATIONS.includes(patch.formation)) s.formation = patch.formation;
+  return s;
+}
+
+function mergeKnot(base, patch) {
   const s = { ...base };
   if (!patch || typeof patch !== "object") return s;
   if (typeof patch.bpm === "number" && isFinite(patch.bpm)) s.bpm = clamp(Math.round(patch.bpm), 20, 120);
@@ -69,6 +95,13 @@ function runDuration(text, settings) {
   return Math.ceil(lastLit + beat + 400 + settings.flash + 500);
 }
 
+// Sweep run length after startAt when the client sends no `dur`: an estimate on the long side.
+function sweepEstimate(text, settings) {
+  const lines = text.split(/\n/).map((l) => l.replace(/\s+/g, " ").trim()).filter(Boolean);
+  const n = lines.reduce((a, l) => a + graphemes(l).length, 0);
+  return Math.ceil(1000 + (n * 1000) / settings.speed + lines.length * settings.gap * 1000 + 2000);
+}
+
 function randomId() {
   const b = crypto.getRandomValues(new Uint8Array(8));
   return Array.from(b, (x) => x.toString(16).padStart(2, "0")).join("");
@@ -83,14 +116,20 @@ export class Channel extends DurableObject {
     });
   }
 
-  init(ch) {
+  // `kind` comes from the DO name ("sw-N" is sweep, "ch-N" is knot) and is kept in state
+  init(ch, kind) {
     // fixed channels always carry their current text, even when older text is stored
-    if (this.s) { if (FIXED[this.s.ch]) { this.s.text = FIXED[this.s.ch]; this.s.locked = true; } return; }
+    if (this.s) {
+      if (!this.s.kind) this.s.kind = kind;
+      if (FIXED[this.s.ch]) { this.s.text = FIXED[this.s.ch]; this.s.locked = true; }
+      return;
+    }
     this.s = {
       ch,
+      kind,
       text: FIXED[ch] || "LIGHT TYPE",
       locked: !!FIXED[ch],
-      settings: { ...DEFAULT_SETTINGS },
+      settings: defaultsFor(kind),
       conductor: null,
       run: null,
       runEnd: 0,
@@ -104,8 +143,8 @@ export class Channel extends DurableObject {
   }
 
   publicState() {
-    const { ch, text, locked, settings, conductor, run } = this.s;
-    return { ch, text, locked, settings, conductor, run };
+    const { ch, kind, text, locked, settings, conductor, run } = this.s;
+    return { ch, kind, text, locked, settings, conductor, run };
   }
 
   liveSockets(excludeSid) {
@@ -191,7 +230,7 @@ export class Channel extends DurableObject {
     const url = new URL(request.url);
     const ch = parseInt(url.searchParams.get("ch"), 10);
     if (!(ch >= 1 && ch <= 99)) return new Response("bad channel", { status: 400 });
-    this.init(ch);
+    this.init(ch, url.searchParams.get("kind") === "sweep" ? "sweep" : "knot");
 
     if (url.pathname === "/state") {
       if (this.expireRun(Date.now())) await this.save();
@@ -290,7 +329,7 @@ export class Channel extends DurableObject {
       case "settings": {
         if (blocked) return this.err(ws, "conductor", "a conductor holds this channel");
         const patch = m.settings && typeof m.settings === "object" ? m.settings : m;
-        this.s.settings = mergeSettings(this.s.settings, patch);
+        this.s.settings = mergeSettings(this.s.kind, this.s.settings, patch);
         await this.save();
         this.broadcastState();
         return;
@@ -304,8 +343,16 @@ export class Channel extends DurableObject {
         const startAt = Number.isFinite(at) && at >= now + 5000 && at <= now + 6 * 3600 * 1000 ? Math.round(at) : now + LEAD_MS;
         const text = this.s.text;
         const settings = { ...this.s.settings };
-        this.s.run = { id: randomId(), startAt, text, settings };
-        this.s.runEnd = startAt + runDuration(text, settings);
+        if (this.s.kind === "sweep") {
+          // `dur`: ms from startAt to the end tone, computed by the client from the same schedule
+          const d = Number(m.dur);
+          const dur = Number.isFinite(d) ? clamp(Math.round(d), 2000, 1200000) : sweepEstimate(text, settings);
+          this.s.run = { id: randomId(), startAt, text, settings, dur };
+          this.s.runEnd = startAt + dur + 1500;
+        } else {
+          this.s.run = { id: randomId(), startAt, text, settings };
+          this.s.runEnd = startAt + runDuration(text, settings);
+        }
         await this.save();
         this.broadcast({ t: "run", run: this.s.run });
         return;
