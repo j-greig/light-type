@@ -20,7 +20,7 @@ then they all play the same schedule, so one walker or a whole group can draw in
 - **Speed** is in letters a second; the phone ticks softly once per letter, and the dial shows the walking pace in
   cm a second. Walking faster than the set speed makes letters wider, slower makes them narrower; they stay sharp.
 - **Direction** → (every line left to right, as the camera sees it), ⇄ (line 1 left to right, line 2 back the
-  other way, a hand's width lower), ←.
+  other way, the phone lowered by its own height), ←.
 - **One walker**: lines one after another, with a pause between them. **Together**: one walker per line, all
   lines at once; every phone uses the same dot size so the lines come out the same length.
 - **Letters** 5×7 dots or VGA 9×16; **dots** round or square; **light width** 1, 2 or 4 columns (more light,
@@ -36,7 +36,7 @@ then they all play the same schedule, so one walker or a whole group can draw in
 1. **Home Screen.** In Safari the page shows how to add it (Share › Add to Home Screen). From the Home Screen it
    fills the screen; in Safari the browser bar stays lit and shows in the photo.
 2. **First touch.** The first touch turns sound on and keeps the screen awake.
-3. **Before the photo** (once per phone, again from MORE › SETUP): Do Not Disturb on, brightness full with
+3. **Before you start** (once per phone, again from MORE › SETUP): Do Not Disturb on, brightness full with
    Auto-Brightness off, tape over the clock. Test sound, hold to test the light.
 4. The letters stay inside the safe area, clear of the status bar and the home bar.
 5. When a new version is deployed, the app loads it the next time it opens with signal, or reloads itself on the

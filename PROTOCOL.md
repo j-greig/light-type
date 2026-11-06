@@ -161,17 +161,19 @@ As above, with `kind: "sweep"` and these settings (defaults shown):
 - `gap` seconds between lines in `formation: "one"`, 0..30.
 - `font` `dot7` (cells 6 columns x 7 rows, 8 rows when a glyph in the run has a descender) or `vga16` (cells 9 x 16).
 - `dots` `round | square`. `light` 1..4: the strip width in columns.
-- `colour`, `caps`, `formation` as on knot channels.
+- `colour` as on knot channels plus `tint` (line 1 #ffedd5, line 2 #e2eeff, line 3 as line 1), the default on
+  the fixed channels. `caps`, `formation` as on knot channels.
 
 Unknown or invalid fields are ignored, numbers clamped. Every change is saved in the DO and broadcast as `state`,
 so a change by anyone on the channel is the setting for every phone on it (last write wins; a conductor locks it).
 
 ### Start
 
-`start` takes `dur`: ms from `startAt` to the end tone, computed by the client from the schedule below. The run
-snapshot carries it: `run = { id, startAt, text, settings, dur }`. The server holds the run until
-`startAt + clamp(dur, 2000, 1200000) + 1500`. Without `dur` it uses
-`1000 + graphemes * 1000 / speed + lines * gap * 1000 + 2000`. `at` works as on knot channels.
+The server computes `dur`, ms from `startAt` to the end tone, from its own text and settings snapshot with the
+schedule below (a `dur` sent by the client is ignored), and the run snapshot carries it:
+`run = { id, startAt, text, settings, dur }`. The server holds the run until `startAt + clamp(dur, 2000, 1200000)
++ 6500`, through the phones' 6 s black tail, so a new START cannot light the screens while the shutter closes.
+`at` works as on knot channels. On fixed channels the snapshot text is always the fixed verse.
 
 ### Schedule (identical on every phone)
 
