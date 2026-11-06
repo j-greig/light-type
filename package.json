@@ -4,6 +4,8 @@
   "type": "module",
   "scripts": {
     "dev": "wrangler dev",
+    "stamp": "node scripts/stamp.mjs",
+    "predeploy": "node scripts/stamp.mjs",
     "deploy": "wrangler deploy",
     "test": "node test/sync.test.mjs"
   },

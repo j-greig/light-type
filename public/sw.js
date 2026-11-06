@@ -1,21 +1,38 @@
-// Light Type service worker: the app shell, network-first.
-// A redeploy is picked up on the next launch with signal; with no signal the cached shell opens.
+// Light Type service worker, shared by / (the sweep app) and /simple/ (the knot app). Network-first:
+// with signal the network copy is served and cached; with no signal the cached copy opens.
+// A navigation under /simple falls back to the cached /simple/ shell, every other navigation to /.
 // The socket (/ws) and the API (/api) are never cached.
-const CACHE = 'light-type-shell-v6';
+const VERSION = '2026-11-06a';   // the same stamp is in app.js; scripts/stamp.mjs sets both
+const CACHE = 'light-type-shell-' + VERSION;
 const SHELL = [
-  '/', '/index.html', '/app.js', '/style.css', '/manifest.webmanifest',
+  '/', '/app.js', '/style.css', '/dot7.js', '/manifest.webmanifest',
+  '/simple/', '/simple/app.js', '/simple/style.css', '/simple/manifest.webmanifest',
   '/vendor/qrcode.js', '/wake.mp4', '/fonts/Px437_IBM_VGA_9x16.ttf',
-  '/icons/apple-touch-icon.png', '/icons/icon-192.png', '/icons/icon-512.png'
+  '/icons/apple-touch-icon.png', '/icons/icon-192.png', '/icons/icon-512.png',
 ];
+const shellFor = (path) => (path === '/simple' || path.startsWith('/simple/') ? '/simple/' : '/');
 
+// each file on its own, so one failure does not drop the rest; a redirected response is not kept
+// (Safari refuses a navigation answered with one)
 self.addEventListener('install', (e) => {
-  e.waitUntil(caches.open(CACHE).then((c) => c.addAll(SHELL)).catch(() => {}).then(() => self.skipWaiting()));
+  e.waitUntil(caches.open(CACHE)
+    .then((c) => Promise.all(SHELL.map((u) => fetch(u, { cache: 'reload' })
+      .then((res) => (res.ok && !res.redirected ? c.put(u, res) : null))
+      .catch(() => {}))))
+    .then(() => self.skipWaiting()));
 });
 
 self.addEventListener('activate', (e) => {
   e.waitUntil(caches.keys()
     .then((ks) => Promise.all(ks.filter((k) => k !== CACHE).map((k) => caches.delete(k))))
     .then(() => self.clients.claim()));
+});
+
+// the page asks for the version before it reloads, and can ask a waiting worker to take over
+self.addEventListener('message', (e) => {
+  const m = e.data || {};
+  if (m.t === 'skip') self.skipWaiting();
+  if (m.t === 'version' && e.ports && e.ports[0]) e.ports[0].postMessage({ version: VERSION });
 });
 
 self.addEventListener('fetch', (e) => {
@@ -25,19 +42,18 @@ self.addEventListener('fetch', (e) => {
   if (url.origin !== self.location.origin) return;
   if (url.pathname.startsWith('/ws') || url.pathname.startsWith('/api')) return;
   if (req.headers.get('upgrade') === 'websocket') return;
-  const isNav = req.mode === 'navigate';
+  const key = req.mode === 'navigate' ? shellFor(url.pathname) : url.pathname;
   e.respondWith((async () => {
     try {
       const res = await fetch(req, { cache: 'no-store' });
-      if (res && res.ok && res.type === 'basic') {
+      if (res && res.ok && res.type === 'basic' && !res.redirected) {
         const c = await caches.open(CACHE);
-        c.put(isNav ? '/' : url.pathname, res.clone());
+        c.put(key, res.clone());
       }
       return res;
     } catch (err) {
       const c = await caches.open(CACHE);
-      const hit = isNav ? (await c.match('/')) || (await c.match('/index.html'))
-                        : await c.match(url.pathname, { ignoreSearch: true });
+      const hit = await c.match(key, { ignoreSearch: true });
       if (hit) return hit;
       throw err;
     }
