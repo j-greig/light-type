@@ -24,8 +24,7 @@ The app guides each step on screen:
    Open as Web App on › Add. From the Home Screen it opens fullscreen with no browser bar to glow in the photo.
 2. **First touch.** The first touch anywhere turns sound on and keeps the screen awake (iPhone needs it); a yellow bar says so until then.
 3. **Before the dark** (once per phone): rotation lock on, Do Not Disturb, brightness up with
-   Auto-Brightness off, Silent mode off (with a test sound), black tape or a thumb over the clock at the top
-   (the status bar stays lit and prints into the photo), Auto-Lock as a backstop. Hold to test the light.
+   Auto-Brightness off, Silent mode off (with a test sound). Hold to test the light.
 4. The row under the top bar shows what the phone can confirm itself: SOUND, AWAKE, UPRIGHT, APP, SAVED.
 
 ## No signal outside
