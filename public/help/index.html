@@ -1,0 +1,202 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Light Type Help</title>
+<style>
+/* Layout: a 1992 web page. Grey ground, Times, blue links, rules between sections; a bordered contents box sits left on tablet and up. Single light look on purpose. */
+:root {
+  --bg: #c0c0c0; --fg: #000000; --link: #0000ee; --visited: #551a8b; --panel: #ffffff; --rule: #808080;
+  --serif: "Times New Roman", Times, serif;
+  --mono: "Courier New", Courier, ui-monospace, monospace;
+  color-scheme: light;
+}
+body { background: var(--bg); color: var(--fg); font: 17px/1.4 var(--serif);
+  padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
+.wrap { max-width: 1000px; margin: 0 auto; padding-block: 16px 48px; display: grid; gap: 20px; }
+@media (min-width: 768px) { .wrap { grid-template-columns: 190px minmax(0, 1fr); gap: 28px; } }
+nav { min-width: 0; }
+@media (min-width: 768px) { nav .toc { position: sticky; top: calc(env(safe-area-inset-top, 0px) + 12px); } }
+.toc { background: var(--panel); border: 2px outset #dfdfdf; padding: 8px 10px; display: grid; gap: 2px; font-size: 15px; }
+.toc .h { font-weight: bold; margin-bottom: 4px; }
+a { color: var(--link); } a:visited { color: var(--visited); }
+a:focus-visible { outline: 1px dotted var(--fg); }
+main { min-width: 0; }
+header { text-align: center; }
+header h1 { font: bold 44px/1.1 var(--serif); margin: 8px 0 4px; letter-spacing: 0.04em; }
+header p { margin: 0 auto 10px; max-width: 60ch; }
+.hero { margin: 12px 0 0; }
+.hero img { border: 2px inset #dfdfdf; display: block; width: 100%; height: auto; }
+.hero figcaption { font-size: 14px; font-style: italic; margin-top: 4px; }
+.get { display: grid; gap: 14px; grid-template-columns: auto minmax(0, 1fr); align-items: center; text-align: left;
+  background: var(--panel); border: 2px outset #dfdfdf; padding: 12px; margin-top: 14px; }
+@media (max-width: 480px) { .get { grid-template-columns: 1fr; justify-items: start; } }
+.qr { background: #fff; width: 128px; height: 128px; }
+.qr svg, .qr img { width: 100%; height: 100%; display: block; }
+.get a.url { font: bold 24px/1.1 var(--serif); word-break: break-all; }
+.get small { display: block; font-size: 14px; margin-top: 6px; }
+section { border-top: 2px groove #dfdfdf; padding-top: 6px; margin-top: 18px; scroll-margin-top: 12px; }
+h2 { font: bold 24px/1.2 var(--serif); margin: 6px 0 8px; text-wrap: balance; }
+h2 span { display: none; }
+p, li { max-width: 68ch; } p { margin: 0 0 10px; }
+ul { margin: 0 0 10px; padding-left: 1.4em; }
+pre { margin: 0 0 10px; overflow-x: auto; background: var(--panel); border: 2px inset #dfdfdf; padding: 10px 12px;
+  font: 14px/1.3 var(--mono); color: var(--fg); }
+pre .on { font-weight: bold; }
+.k { font-family: var(--mono); font-weight: bold; }
+.note { font-size: 14px; font-style: italic; }
+figure { margin: 0 0 12px; } figure img { border: 2px inset #dfdfdf; display: block; width: 100%; height: auto; }
+figcaption { font-size: 14px; font-style: italic; margin-top: 4px; }
+footer { border-top: 2px groove #dfdfdf; margin-top: 22px; padding-top: 8px; font-size: 14px; font-style: italic; text-align: center; }
+</style>
+
+</head><body>
+<div class="wrap">
+  <nav aria-label="Contents">
+    <div class="toc">
+      <div class="h">CONTENTS</div>
+      <a href="#get">Get the app</a>
+      <a href="#short">How it works</a>
+      <a href="#dots">Letters are dots</a>
+      <a href="#screen">What the screen shows</a>
+      <a href="#walk">Walk and the camera adds it up</a>
+      <a href="#speed">Speed</a>
+      <a href="#test">TEST: the checkerboard</a>
+      <a href="#hold">Hold to test the light</a>
+      <a href="#iphone">Test photos with an iPhone</a>
+      <a href="#camera">With a proper camera</a>
+      <a href="#photos">What it might look like</a>
+    </div>
+  </nav>
+
+  <main>
+    <header id="get">
+      <h1>LIGHT TYPE</h1>
+      <p>Walk a sentence into a long-exposure photo. Your phone becomes one moving strip of light; the camera sees the words.</p>
+      <div class="get">
+        <div class="qr" role="img" aria-label="QR code for light.wibandwob.com"><img src="qr.svg" alt="" width="128" height="128"></div>
+        <div>
+          <a class="url" href="https://light.wibandwob.com" target="_blank" rel="noopener">light.wibandwob.com</a>
+          <small>Open it in Safari, then Share › Add to Home Screen. It runs fullscreen from the Home Screen and updates itself.</small>
+          <small>Had an older version? Settings › Apps › Safari › Advanced › Website Data › delete light.wibandwob.com, then add it again.</small>
+        </div>
+      </div>
+      <figure class="hero"><img src="square-wob1.0.jpg" alt="Simulated long exposure: I FEEL MYSELF THINKING and I THINK MYSELF FEELING in square light dots, wavy from a human walk" width="1100" height="672"><figcaption>A human walk with bounce and drift (simulated).</figcaption></figure>
+    </header>
+
+    <section id="short">
+      <h2>How it works</h2>
+      <p>The phone never shows a whole letter. It shows <b>one thin vertical strip of dots</b>, and the strip changes 60 times a second. You walk sideways at a steady pace with the screen facing the camera. The camera is on a long exposure, so it adds up every strip where you held it, and the strips join into letters in the photo. A scrolling LED shop sign works the same way, except here the sign is your walk.</p>
+    </section>
+
+    <section id="dots">
+      <h2>Letters are dots</h2>
+      <p>Each letter is 5 dots wide and 7 tall, with one blank column after it. This is F:</p>
+<pre>
+  column:  1 2 3 4 5 6
+           <span class="on">■ ■ ■ ■ ■</span> ·
+           <span class="on">■</span> · · · · ·
+           <span class="on">■</span> · · · · ·
+           <span class="on">■ ■ ■ ■</span> · ·
+           <span class="on">■</span> · · · · ·
+           <span class="on">■</span> · · · · ·
+           <span class="on">■</span> · · · · ·
+</pre>
+    </section>
+
+    <section id="screen">
+      <h2>What the screen shows</h2>
+      <p>At any moment the screen is black except for one column of square dots, as tall as the screen:</p>
+<pre>
+  0.0 s      0.1 s      0.2 s      0.3 s
+  ┌─────┐    ┌─────┐    ┌─────┐    ┌─────┐
+  │  <span class="on">■</span>  │    │  <span class="on">■</span>  │    │  <span class="on">■</span>  │    │  <span class="on">■</span>  │
+  │  <span class="on">■</span>  │    │     │    │     │    │     │
+  │  <span class="on">■</span>  │    │     │    │     │    │     │
+  │  <span class="on">■</span>  │    │  <span class="on">■</span>  │    │  <span class="on">■</span>  │    │  <span class="on">■</span>  │
+  │  <span class="on">■</span>  │    │     │    │     │    │     │
+  │  <span class="on">■</span>  │    │     │    │     │    │     │
+  │  <span class="on">■</span>  │    │     │    │     │    │     │
+  └─────┘    └─────┘    └─────┘    └─────┘
+  column 1   column 2   column 3   column 4   … of F
+</pre>
+      <p class="note">Inside each column's slot the squares slide left by one dot as you walk right, so they stay in one place in the photo. After about 60% of the slot the screen goes black until the next column, which keeps a dark gap between dots even if your pace is off. Each screen frame is held for 1/60 s while you move, so the edges carry a little blur.</p>
+    </section>
+
+    <section id="walk">
+      <h2>Walk and the camera adds it up</h2>
+<pre>
+  the photo                          you walk this way ──▶
+
+  <span class="on">■ ■ ■ ■</span>   <span class="on">■ ■ ■ ■</span>   <span class="on">■ ■ ■ ■</span>   <span class="on">■</span>
+  <span class="on">■</span>         <span class="on">■</span>         <span class="on">■</span>         <span class="on">■</span>
+  <span class="on">■ ■ ■</span>     <span class="on">■ ■ ■</span>     <span class="on">■ ■ ■</span>     <span class="on">■</span>
+  <span class="on">■</span>         <span class="on">■</span>         <span class="on">■</span>         <span class="on">■</span>
+  <span class="on">■</span>         <span class="on">■ ■ ■ ■</span>   <span class="on">■ ■ ■ ■</span>   <span class="on">■ ■ ■ ■</span>
+</pre>
+      <p>Nobody standing in the garden sees the words. Only the photo does.</p>
+    </section>
+
+    <section id="speed">
+      <h2>Speed</h2>
+      <p>The strip moves on a clock (the <span class="k">SPEED</span> setting, in letters per second). Your feet move at your own speed. A soft tick plays as each letter starts so you can feel the pace.</p>
+<pre>
+  on pace        too fast             too slow
+  FEEL           F  E  E  L           FEEL
+  normal         stretched wide       squashed narrow
+</pre>
+      <p>Off pace the words stretch or squash, and they stay readable. Wobbles and a line that drifts up or down are fine.</p>
+    </section>
+
+    <section id="test">
+      <h2>TEST: the checkerboard</h2>
+      <p>Before a real run, press <span class="k">TEST</span> beside START. The phone sweeps a checkerboard instead of words, with the same countdown and ticks.</p>
+<pre>
+  squares square     squares wide         squares narrow
+  <span class="on">██  ██  ██</span>         <span class="on">████    ████</span>         <span class="on">█ █ █ █ █</span>
+    <span class="on">██  ██</span>               <span class="on">████</span>               <span class="on">█ █ █ █</span>
+  pace is right      walk SLOWER          walk FASTER
+</pre>
+      <p>The same photo checks focus, brightness and framing for the photographer.</p>
+    </section>
+
+    <section id="hold">
+      <h2>Hold to test the light</h2>
+      <p>This prints nothing. It lights the strip at full height while you stand still, so you can check brightness and how the phone looks to the camera. If it shows a whole letter, the phone still has the old app: clear it (see <a href="#get">Get the app</a>).</p>
+    </section>
+
+    <section id="iphone">
+      <h2>Test photos with an iPhone</h2>
+      <p>Good enough for TEST runs and rehearsals. One iPhone is the light, a second is the camera.</p>
+      <ul>
+        <li><b>Hold it dead still.</b> A tripod, or prop it on a wall, chair or bag. Use the 3 s timer so your finger does not shake it.</li>
+        <li><b>Best: Slow Shutter Cam</b> (paid app). Mode <b>Light Trail</b>, shutter <b>Bulb</b> or 15 s. Start on the long low beep, stop on the end tone. You watch the letters appear.</li>
+        <li><b>Free: Camera app, Night mode.</b> It appears only in real darkness (yellow moon icon). On a tripod, tap the moon and drag to the longest time, up to 30 s. It merges frames and may smooth a fast light, so trust it less.</li>
+        <li><b>Not Live Photo › Long Exposure.</b> It covers about 3 s, too short for a line.</li>
+        <li>Lock focus first: shine a phone where the walker will be, tap and hold until <b>AE/AF LOCK</b>.</li>
+        <li>Use the 1x lens and stand 3 to 5 m back so the whole line fits.</li>
+      </ul>
+    </section>
+
+    <section id="camera">
+      <h2>With a proper camera</h2>
+      <ul>
+        <li>Tripod. Manual focus on the line the walker will walk.</li>
+        <li>Exposure for the whole walk plus a second each end: about 10 to 15 s for one line.</li>
+        <li>Start at ISO 200, f/8. Check the TEST photo, then adjust.</li>
+        <li>Open the shutter on the long low beep after the countdown, close it on the two-note end tone.</li>
+      </ul>
+    </section>
+
+    <section id="photos">
+      <h2>What it might look like</h2>
+      <p>Simulated photos with the app's own dot font and square dots.</p>
+      <div class="pair">
+        <figure><img src="square-wob0.jpg" alt="Simulated long exposure: two lines of round light dots reading I FEEL MYSELF THINKING and I THINK MYSELF FEELING, perfectly straight" width="1100" height="672"><figcaption>A perfectly steady walk.</figcaption></figure>
+        <figure><img src="square-pace1.2.jpg" alt="The same two lines walked 20 percent too fast: longer, gaps still clear" width="1100" height="672"><figcaption>Walked 20% too fast: the line gets longer, the dots stay separate.</figcaption></figure>
+      </div>
+    </section>
+
+    <footer>Light Type by Wib&amp;Wob · <a href="https://wibandwob.com" target="_blank" rel="noopener">wibandwob.com</a> · the step-by-step version is at <a href="https://light.wibandwob.com/simple/" target="_blank" rel="noopener">light.wibandwob.com/simple</a></footer>
+  </main>
+</div>
+
+</body></html>

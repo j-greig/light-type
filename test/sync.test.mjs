@@ -186,7 +186,7 @@ try {
     const sk = await k.hello(); const ss = await s.hello(); const ss2 = await s2.hello();
     ok(ss.kind === "sweep" && sk.kind === "knot", "state carries kind");
     ok(ss.settings.speed === 2 && ss.settings.dir === "alt" && ss.settings.gap === 3 && ss.settings.font === "dot7"
-      && ss.settings.dots === "round" && ss.settings.light === 1 && ss.settings.formation === "one" && !("bpm" in ss.settings),
+      && ss.settings.dots === "square" && ss.settings.light === 1 && ss.settings.formation === "one" && !("bpm" in ss.settings),
       "sweep defaults");
     ok(typeof sk.settings.bpm === "number" && !("speed" in sk.settings), "knot defaults unchanged on the same number");
     ok(ss2.here === 2, "sweep presence counts only sweep sockets");
@@ -208,7 +208,7 @@ try {
     s.send({ t: "settings", settings: { speed: 99, gap: 99, light: 9, dir: "up", font: "comic", dots: "star", colour: "nope", bpm: 30 } });
     const c1 = await cl;
     ok(c1.settings.speed === 5 && c1.settings.gap === 30 && c1.settings.light === 4 && c1.settings.dir === "alt"
-      && c1.settings.font === "dot7" && c1.settings.dots === "round" && c1.settings.colour === "white" && !("bpm" in c1.settings),
+      && c1.settings.font === "dot7" && c1.settings.dots === "square" && c1.settings.colour === "white" && !("bpm" in c1.settings),
       "sweep settings clamped, bad fields ignored");
     const cl2 = s2.next((m) => m.t === "state" && m.settings.speed === 0.5);
     s.send({ t: "settings", settings: { speed: 0.01, gap: -4, light: 0 } });

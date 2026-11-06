@@ -2,15 +2,17 @@
 // with signal the network copy is served and cached; with no signal the cached copy opens.
 // A navigation under /simple falls back to the cached /simple/ shell, every other navigation to /.
 // The socket (/ws) and the API (/api) are never cached.
-const VERSION = '2026-11-06-1749';   // the same stamp is in app.js; scripts/stamp.mjs sets both
+const VERSION = '2026-11-06-1815';   // the same stamp is in app.js; scripts/stamp.mjs sets both
 const CACHE = 'light-type-shell-' + VERSION;
 const SHELL = [
   '/', '/app.js', '/style.css', '/dot7.js', '/manifest.webmanifest',
+  '/help/', '/help/qr.svg',
   '/simple/', '/simple/app.js', '/simple/style.css', '/simple/manifest.webmanifest',
   '/vendor/qrcode.js', '/wake.mp4', '/fonts/Px437_IBM_VGA_9x16.ttf',
   '/icons/apple-touch-icon.png', '/icons/icon-192.png', '/icons/icon-512.png',
 ];
-const shellFor = (path) => (path === '/simple' || path.startsWith('/simple/') ? '/simple/' : '/');
+const shellFor = (path) => (path === '/simple' || path.startsWith('/simple/') ? '/simple/'
+  : path === '/help' || path.startsWith('/help/') ? '/help/' : '/');
 
 // What both apps need to open with no signal. If one of these fails to load, the install fails and the
 // previous complete release stays in charge (the browser tries again on the next launch).

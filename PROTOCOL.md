@@ -151,7 +151,7 @@ No flaw in the contract; these clarify what the server does.
 As above, with `kind: "sweep"` and these settings (defaults shown):
 
 ```json
-{ "speed": 2, "dir": "alt", "gap": 3, "font": "dot7", "dots": "round", "light": 1,
+{ "speed": 2, "dir": "alt", "gap": 3, "font": "dot7", "dots": "square", "light": 1,
   "colour": "white", "caps": true, "formation": "one" }
 ```
 
@@ -160,7 +160,7 @@ As above, with `kind: "sweep"` and these settings (defaults shown):
   camera sees it).
 - `gap` seconds between lines in `formation: "one"`, 0..30.
 - `font` `dot7` (cells 6 columns x 7 rows, 8 rows when a glyph in the run has a descender) or `vga16` (cells 9 x 16).
-- `dots` `round | square`. `light` 1..4: the strip width in columns.
+- `dots` is always `square` (older stored values are ignored). `light` 1..4: columns lit at once.
 - `colour` as on knot channels plus `tint` (line 1 #ffedd5, line 2 #e2eeff, line 3 as line 1), the default on
   the fixed channels. `caps`, `formation` as on knot channels.
 
@@ -201,11 +201,13 @@ each later line when `gap` is at least two cell-beats, the two-note end tone.
 - Letter band: inside the safe area (clear of the status bar and the home bar). `pitch = band height * letter
   height % / rows`. In `together` every phone uses the pitch of an iPhone SE band (647 CSS px) or its own, whichever
   is smaller, so every line has the same length.
-- Each frame (half-frame look-ahead): `x = cx + (j + 0.5 - u) * pitch`, `y = top + (r + 0.5) * pitch` for the lit
-  dots of columns near `u`, clipped to the strip `cx ± light * pitch / 2`, with a feathered edge a quarter pitch wide
-  centred on each side. A strip wider than the screen is cut to the whole columns that fit.
-- Round dots are `0.8 * pitch` tall and `max(0.3, 0.8 - colRate * frame time) * pitch` wide, so a dot printed while
-  the phone moves for one frame comes out round. Square dots are one pitch.
+- Each frame (half-frame look-ahead) draws a sawtooth: only the current column `j` (`floor(u)` left to right,
+  `ceil(u) - 1` right to left), whole, with hard edges, at `x = cx + (j + 0.5 - u) * pitch`. It is lit for the first 60%
+  of its slot, then the screen is black until the next column, so a gap stays between columns even off pace. With
+  LIGHT WIDTH n the n - 1 columns behind it are drawn too, each at its own place.
+- Dots are squares `0.85 * pitch` tall and `max(0.4, 0.8 - colRate / 60) * pitch` wide: one held frame of travel
+  widens them to about 0.8 of a pitch in the photo. Each frame is held for 1/60 s while the phone moves, so the printed
+  edges carry about `colRate / 60` of a pitch of blur; on pace they do not drift.
 - Outside the strip the canvas is pure black. Outside a line's time the screen is black.
 
 ### TEST

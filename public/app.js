@@ -6,7 +6,7 @@
 // Screens: INSTALL (browser tab on a phone) -> CHECK (once per phone) -> DIAL -> RUN (the stage).
 'use strict';
 (() => {
-  const BUILD = '2026-11-06-1749';   // the same stamp is in sw.js; scripts/stamp.mjs sets both
+  const BUILD = '2026-11-06-1815';   // the same stamp is in sw.js; scripts/stamp.mjs sets both
   const $ = (id) => document.getElementById(id);
   // write text only when it changes: WebKit drops a tap on a button whose text node is replaced mid-tap
   const setText = (node, v) => { v = String(v); if (node.textContent !== v) node.textContent = v; };
@@ -47,7 +47,7 @@
     2: 'I FEEL MYSELF THINKING\nI THINK MYSELF FEELING\nI AM MYSELF BECOMING',
   };
   const COLOURS = ['white', 'warm', 'yellow', 'cyan', 'magenta', 'cycle', 'tint'];
-  const DEFAULT_SETTINGS = { speed: 2, dir: 'alt', gap: 3, font: 'dot7', dots: 'round', light: 1, colour: 'white', caps: true, formation: 'one' };
+  const DEFAULT_SETTINGS = { speed: 2, dir: 'alt', gap: 3, font: 'dot7', dots: 'square', light: 1, colour: 'white', caps: true, formation: 'one' };
   // the same clamping as the server, so a bad cached state cannot break a run
   function normSettings(st) {
     st = st || {};
@@ -56,7 +56,7 @@
       dir: ['ltr', 'rtl', 'alt'].includes(st.dir) ? st.dir : 'alt',
       gap: clampInt(st.gap, 0, 30, 3),
       font: st.font === 'vga16' ? 'vga16' : 'dot7',
-      dots: st.dots === 'square' ? 'square' : 'round',
+      dots: 'square',
       light: clampInt(st.light, 1, 4, 1),
       colour: COLOURS.includes(st.colour) ? st.colour : 'white',
       caps: st.caps !== false,
@@ -403,49 +403,48 @@
     x.fillText(c, stageW / 2 - (m2.actualBoundingBoxRight - m2.actualBoundingBoxLeft) / 2, stageH / 2 + (m2.actualBoundingBoxAscent - m2.actualBoundingBoxDescent) / 2);
     x.globalAlpha = 1;
   }
-  const FEATHER = 0.25;        // strip edge ramp, in pitches, centred on each edge
-  // One frame of the strip. d: {cols, cell, cellBase, lineCols, rows, pitch, light, colour, dots, colRate, dtMs, alpha}.
-  // Round dots are drawn narrower by the distance the phone moves in one frame, so they print round.
+  // One frame of the strip, drawn as a sawtooth: the current column only, whole, with hard edges. During the first
+  // DUTY of its slot the column slides left one pitch per slot, so each square stays still in the world when the walker
+  // is on pace; for the rest of the slot the screen is black, which keeps a dark gap between columns in the photo even
+  // off pace. Each frame is still held for 1/60 s while the phone moves, so the printed edges carry a little blur
+  // (about colRate/60 of a pitch); squares are drawn narrower by that amount so they print near square.
+  // d: {cols, cell, cellBase, lineCols, rows, pitch, light, colour, colRate, dtMs, alpha, rtl, hold}.
+  const DUTY = 0.6;            // lit fraction of each column slot
+  const SQ_H = 0.85;           // square height on the glass, in pitches
+  const SQ_W = 0.8;            // target printed width, in pitches (glass width + one frame of travel)
   function drawStrip(d, u, trace) {
     const dpr = window.devicePixelRatio || 1, x = gc.getContext('2d');
     x.setTransform(dpr, 0, 0, dpr, 0, 0);
     x.globalAlpha = 1; x.fillStyle = '#000'; x.fillRect(0, 0, stageW, stageH);
     const p = d.pitch, rows = d.rows, cx = stageW / 2, bd = d.band || band(stageH), top = bd.top + (bd.h - rows * p) / 2;
-    // a strip wider than the screen is cut to the whole columns that fit (LIGHT WIDTH 4 at full height)
-    const fe = FEATHER * p, light = Math.max(1, Math.min(d.light, Math.floor((stageW - fe) / p))), half = (light * p) / 2;
-    x.save();
-    x.beginPath(); x.rect(cx - half - fe / 2, top, 2 * half + fe, rows * p); x.clip();
-    const round = d.dots === 'round';
-    const dw = round ? Math.max(0.3 * p, 0.8 * p - (p * d.colRate * d.dtMs) / 1000) : p;
-    const dh = round ? 0.8 * p : p;
-    const reach = light / 2 + FEATHER + 1;
-    const j0 = Math.max(0, Math.floor(u - reach)), j1 = Math.min(d.lineCols - 1, Math.ceil(u + reach));
+    const light = Math.max(1, Math.min(d.light || 1, 4));
+    const gw = Math.max(0.4 * p, SQ_W * p - (p * d.colRate) / 60), gh = SQ_H * p;
+    let j, lit;
+    if (d.hold) { j = Math.floor(u); lit = true; }
+    else if (d.rtl) { j = Math.ceil(u) - 1; lit = (j + 1 - u) < DUTY; }
+    else { j = Math.floor(u); lit = (u - j) < DUTY; }
     const dots = trace ? [] : null;
-    x.globalAlpha = d.alpha;
-    for (let j = j0; j <= j1; j++) {
-      const rs = d.cols[j];
-      if (!rs) continue;
-      const xc = cx + (j + 0.5 - u) * p;
-      x.fillStyle = colourFor(d.colour, d.cellBase + d.cell[j], d.li);
-      x.beginPath();
-      for (const r of rs) {
-        const yc = top + (r + 0.5) * p;
-        if (round) { x.moveTo(xc + dw / 2, yc); x.ellipse(xc, yc, dw / 2, dh / 2, 0, 0, 2 * Math.PI); }
-        else x.rect(xc - p / 2, yc - p / 2, p, p);
-        if (dots) dots.push({ j, r, x: xc, y: yc });
+    if (lit) {
+      x.globalAlpha = d.alpha;
+      // LIGHT WIDTH n: the current column and the n-1 behind it, each at its own place in the world
+      for (let k = 0; k < light; k++) {
+        const jj = d.rtl ? j + k : j - k;
+        if (jj < 0 || jj >= d.lineCols) continue;
+        const rs = d.cols[jj];
+        if (!rs) continue;
+        const xc = d.hold ? cx + (jj - j) * p : cx + (jj + 0.5 - u) * p;
+        x.fillStyle = colourFor(d.colour, d.cellBase + d.cell[jj], d.li);
+        x.beginPath();
+        for (const r of rs) {
+          const yc = top + (r + 0.5) * p;
+          x.rect(xc - gw / 2, yc - gh / 2, gw, gh);
+          if (dots) dots.push({ j: jj, r, x: xc, y: yc });
+        }
+        x.fill();
       }
-      x.fill();
+      x.globalAlpha = 1;
     }
-    // soft left and right edges, so a late frame does not leave a hard double edge in the photo
-    x.globalAlpha = 1;
-    for (const side of [-1, 1]) {
-      const e = cx + side * half, a = e + side * fe / 2, b = e - side * fe / 2;
-      const g = x.createLinearGradient(a, 0, b, 0);
-      g.addColorStop(0, 'rgba(0,0,0,1)'); g.addColorStop(1, 'rgba(0,0,0,0)');
-      x.fillStyle = g; x.fillRect(Math.min(a, b), top, fe, rows * p);
-    }
-    x.restore();
-    return { u, pitch: p, cx, top, dw, dh, j0, j1, dots, light };
+    return { u, pitch: p, cx, top, dw: gw, dh: gh, j0: j, j1: j, dots, light, lit };
   }
   function showStage() {
     touching.clear();
@@ -596,7 +595,7 @@
         const du = (sch.colRate * (now - s.start)) / 1000;
         const u = s.rtl ? s.u0 - du : s.u0 + du;
         const dr = drawStrip({ cols: s.cols, cell: s.cell, cellBase: s.cellBase, lineCols: s.lineCols, rows: sch.rows, pitch: R.pitch,
-          light: sch.light, colour: sch.st.colour, dots: sch.st.dots, colRate: sch.colRate, dtMs: frameDt, alpha: level(), band: R.band, li: s.li }, u, !!api.trace);
+          light: sch.light, colour: sch.st.colour, colRate: sch.colRate, dtMs: frameDt, alpha: level(), band: R.band, li: s.li, rtl: !!s.rtl }, u, !!api.trace);
         R.lastDraw = Object.assign(dr, { now, real, li: s.li, wall: Date.now() });
         key = 'strip';
         if (R.segLogged !== s.li) { R.segLogged = s.li; log.push({ ev: 'seg', li: s.li, due: s.start, serverT: real, now, wall: Date.now(), run: run.id }); }
@@ -692,7 +691,7 @@
     dot: $('dot'), here: $('here'), sync: $('sync'), chNum: $('chNum'), chName: $('chName'), text: $('text'), textNote: $('textNote'),
     sign: $('sign'), pv: $('pv'), pvRows: $('pvRows'), spVal: $('spVal'), spWalk: $('spWalk'), spDown: $('spDown'), spUp: $('spUp'),
     fOne: $('fOne'), fTog: $('fTog'), partRow: $('partRow'), partSeg: $('partSeg'),
-    dirSeg: $('dirSeg'), fontSeg: $('fontSeg'), dotsSeg: $('dotsSeg'), lightSeg: $('lightSeg'),
+    dirSeg: $('dirSeg'), fontSeg: $('fontSeg'), lightSeg: $('lightSeg'),
     gap: $('gap'), colour: $('colour'), caps: $('caps'), size: $('size'), level: $('level'),
     start: $('startBtn'), test: $('testBtn'), testNote: $('testNote'), runRow: $('runRow'), rejoin: $('rejoinBtn'), stop: $('stopBtn'), startNote: $('startNote'),
     conduct: $('conductBtn'), name: $('name'), shareUrl: $('shareUrl'), qr: $('qr'), toast: $('toast'),
@@ -747,7 +746,7 @@
     const st = normSettings(S.settings);
     const tog = st.formation === 'together';
     el.fOne.setAttribute('aria-pressed', String(!tog)); el.fTog.setAttribute('aria-pressed', String(tog));
-    press(el.dirSeg, st.dir); press(el.fontSeg, st.font); press(el.dotsSeg, st.dots); press(el.lightSeg, st.light);
+    press(el.dirSeg, st.dir); press(el.fontSeg, st.font); press(el.lightSeg, st.light);
     const L = splitLines(S.text, st.caps);
     el.partRow.hidden = !tog;
     if (tog) {
@@ -765,7 +764,7 @@
     setIfIdle(el.gap, st.gap); setIfIdle(el.colour, st.colour);
     if (document.activeElement !== el.caps) el.caps.checked = st.caps;
     const shared = [el.fOne, el.fTog, el.gap, el.colour, el.caps, el.spDown, el.spUp,
-      ...el.dirSeg.children, ...el.fontSeg.children, ...el.dotsSeg.children, ...el.lightSeg.children];
+      ...el.dirSeg.children, ...el.fontSeg.children, ...el.lightSeg.children];
     shared.forEach((x) => x.disabled = !!other);
     renderSpeed(st, L);
     renderPreview(st, L);
@@ -811,8 +810,7 @@
         x.beginPath();
         for (const row of rs) {
           const cxp = x0 + (j + 0.5) * pp, cyp = y0 + (row + 0.5) * pp;
-          if (st.dots === 'round') { x.moveTo(cxp + pp * 0.4, cyp); x.arc(cxp, cyp, pp * 0.4, 0, 2 * Math.PI); }
-          else x.rect(cxp - pp / 2, cyp - pp / 2, pp, pp);
+          x.rect(cxp - 0.4 * pp, cyp - 0.425 * pp, 0.8 * pp, 0.85 * pp);
         }
         x.fill();
       }
@@ -917,7 +915,7 @@
   el.fOne.addEventListener('click', () => setSetting('formation', 'one'));
   el.fTog.addEventListener('click', () => setSetting('formation', 'together'));
   const segWire = (box, k, conv) => Array.from(box.children).forEach((b) => b.addEventListener('click', () => setSetting(k, conv ? conv(b.dataset.v) : b.dataset.v)));
-  segWire(el.dirSeg, 'dir'); segWire(el.fontSeg, 'font'); segWire(el.dotsSeg, 'dots'); segWire(el.lightSeg, 'light', Number);
+  segWire(el.dirSeg, 'dir'); segWire(el.fontSeg, 'font'); segWire(el.lightSeg, 'light', Number);
   el.gap.addEventListener('change', () => setSetting('gap', clampInt(el.gap.value, 0, 30, 3), 300));
   el.colour.addEventListener('change', () => setSetting('colour', el.colour.value));
   el.caps.addEventListener('change', () => setSetting('caps', el.caps.checked));
@@ -1069,7 +1067,7 @@
     const st = normSettings(S && S.settings), L = S ? splitLines(S.text, st.caps) : [];
     const rows = rowsFor(st, L), all = Array.from({ length: rows }, (_, r) => r), n = st.light + 4;
     drawStrip({ cols: Array(n).fill(all), cell: new Int16Array(n), cellBase: 0, lineCols: n, rows, pitch: pitchFor(rows, st.formation === 'together', stageH),
-      light: st.light, colour: st.colour, dots: st.dots, colRate: 0, dtMs: 0, alpha: level() }, n / 2);
+      light: st.light, colour: st.colour, colRate: 0, dtMs: 0, alpha: level(), hold: true }, n / 2);
   }
   function endTestLight() { if (mode !== 'test-light') return; hideStage(); mode = 'dial'; renderTurn(); }
   document.querySelectorAll('.testLight').forEach((b) => {

@@ -23,7 +23,7 @@ then they all play the same schedule, so one walker or a whole group can draw in
   other way, the phone lowered by its own height), ←.
 - **One walker**: lines one after another, with a pause between them. **Together**: one walker per line, all
   lines at once; every phone uses the same dot size so the lines come out the same length.
-- **Letters** 5×7 dots or VGA 9×16; **dots** round or square; **light width** 1, 2 or 4 columns (more light,
+- **Letters** 5×7 dots or VGA 9×16; square dots; **light width** 1, 2 or 4 columns (more light,
   needs a steadier pace; a phone draws as many as fit across its screen).
 - Every setting above is the same on every phone on the channel, saved on the server; the last change wins.
   Letter height and light level are set on each phone.

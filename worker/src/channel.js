@@ -11,10 +11,9 @@ const FORMATIONS = ["one", "together"];
 // knot channels (DO "ch-N", the app at /simple)
 const DEFAULT_SETTINGS = { bpm: 60, flash: 160, colour: "white", caps: true, walkback: 10, formation: "one" };
 // sweep channels (DO "sw-N", the app at /)
-const SWEEP_SETTINGS = { speed: 2, dir: "alt", gap: 3, font: "dot7", dots: "round", light: 1, colour: "white", caps: true, formation: "one" };
+const SWEEP_SETTINGS = { speed: 2, dir: "alt", gap: 3, font: "dot7", dots: "square", light: 1, colour: "white", caps: true, formation: "one" };
 const DIRS = ["ltr", "rtl", "alt"];
 const FONTS = ["dot7", "vga16"];
-const DOTS = ["round", "square"];
 const defaultsFor = (kind, ch) => kind === "sweep"
   ? { ...SWEEP_SETTINGS, ...(FIXED[ch] ? { colour: "tint" } : {}) }
   : { ...DEFAULT_SETTINGS };
@@ -62,7 +61,7 @@ function mergeSweep(base, patch) {
   if (DIRS.includes(patch.dir)) s.dir = patch.dir;
   if (num(patch.gap)) s.gap = clamp(Math.round(patch.gap), 0, 30);
   if (FONTS.includes(patch.font)) s.font = patch.font;
-  if (DOTS.includes(patch.dots)) s.dots = patch.dots;
+  s.dots = "square"; // squares only: the sawtooth strip prints square pixels
   if (num(patch.light)) s.light = clamp(Math.round(patch.light), 1, 4);
   if (SWEEP_COLOURS.includes(patch.colour)) s.colour = patch.colour;
   if (typeof patch.caps === "boolean") s.caps = patch.caps;
