@@ -11,7 +11,7 @@ const FORMATIONS = ["one", "together"];
 // knot channels (DO "ch-N", the app at /simple)
 const DEFAULT_SETTINGS = { bpm: 60, flash: 160, colour: "white", caps: true, walkback: 10, formation: "one" };
 // sweep channels (DO "sw-N", the app at /)
-const SWEEP_SETTINGS = { speed: 2, dir: "alt", gap: 3, font: "dot7", dots: "square", light: 1, colour: "white", caps: true, formation: "one" };
+const SWEEP_SETTINGS = { speed: 2, dir: "alt", gap: 3, font: "dot7", dots: "square", light: 1, duty: 0.6, colour: "white", caps: true, formation: "one" };
 const DIRS = ["ltr", "rtl", "alt"];
 const FONTS = ["dot7", "vga16"];
 const defaultsFor = (kind, ch) => kind === "sweep"
@@ -57,12 +57,13 @@ function mergeSweep(base, patch) {
   const s = { ...base };
   if (!patch || typeof patch !== "object") return s;
   const num = (v) => typeof v === "number" && isFinite(v);
-  if (num(patch.speed)) s.speed = clamp(Math.round(patch.speed * 10) / 10, 0.5, 5);
+  if (num(patch.speed)) s.speed = clamp(Math.round(patch.speed * 10) / 10, 0.2, 5);
   if (DIRS.includes(patch.dir)) s.dir = patch.dir;
   if (num(patch.gap)) s.gap = clamp(Math.round(patch.gap), 0, 30);
   if (FONTS.includes(patch.font)) s.font = patch.font;
   s.dots = "square"; // squares only: the sawtooth strip prints square pixels
   if (num(patch.light)) s.light = clamp(Math.round(patch.light), 1, 4);
+  if (num(patch.duty)) s.duty = clamp(Math.round(patch.duty * 10) / 10, 0.2, 1);
   if (SWEEP_COLOURS.includes(patch.colour)) s.colour = patch.colour;
   if (typeof patch.caps === "boolean") s.caps = patch.caps;
   if (FORMATIONS.includes(patch.formation)) s.formation = patch.formation;

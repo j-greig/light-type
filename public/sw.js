@@ -2,7 +2,7 @@
 // with signal the network copy is served and cached; with no signal the cached copy opens.
 // A navigation under /simple falls back to the cached /simple/ shell, every other navigation to /.
 // The socket (/ws) and the API (/api) are never cached.
-const VERSION = '2026-11-06-1817';   // the same stamp is in app.js; scripts/stamp.mjs sets both
+const VERSION = '2026-11-06-1824';   // the same stamp is in app.js; scripts/stamp.mjs sets both
 const CACHE = 'light-type-shell-' + VERSION;
 const SHELL = [
   '/', '/app.js', '/style.css', '/dot7.js', '/manifest.webmanifest',

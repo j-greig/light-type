@@ -6,7 +6,7 @@
 // Screens: INSTALL (browser tab on a phone) -> CHECK (once per phone) -> DIAL -> RUN (the stage).
 'use strict';
 (() => {
-  const BUILD = '2026-11-06-1817';   // the same stamp is in sw.js; scripts/stamp.mjs sets both
+  const BUILD = '2026-11-06-1824';   // the same stamp is in sw.js; scripts/stamp.mjs sets both
   const $ = (id) => document.getElementById(id);
   // write text only when it changes: WebKit drops a tap on a button whose text node is replaced mid-tap
   const setText = (node, v) => { v = String(v); if (node.textContent !== v) node.textContent = v; };
@@ -47,17 +47,18 @@
     2: 'I FEEL MYSELF THINKING\nI THINK MYSELF FEELING\nI AM MYSELF BECOMING',
   };
   const COLOURS = ['white', 'warm', 'yellow', 'cyan', 'magenta', 'cycle', 'tint'];
-  const DEFAULT_SETTINGS = { speed: 2, dir: 'alt', gap: 3, font: 'dot7', dots: 'square', light: 1, colour: 'white', caps: true, formation: 'one' };
+  const DEFAULT_SETTINGS = { speed: 2, dir: 'alt', gap: 3, font: 'dot7', dots: 'square', light: 1, duty: 0.6, colour: 'white', caps: true, formation: 'one' };
   // the same clamping as the server, so a bad cached state cannot break a run
   function normSettings(st) {
     st = st || {};
     return {
-      speed: clampNum(Math.round(Number(st.speed) * 10) / 10, 0.5, 5, 2),
+      speed: clampNum(Math.round(Number(st.speed) * 10) / 10, 0.2, 5, 2),
       dir: ['ltr', 'rtl', 'alt'].includes(st.dir) ? st.dir : 'alt',
       gap: clampInt(st.gap, 0, 30, 3),
       font: st.font === 'vga16' ? 'vga16' : 'dot7',
       dots: 'square',
       light: clampInt(st.light, 1, 4, 1),
+      duty: clampNum(Math.round(Number(st.duty) * 10) / 10, 0.2, 1, 0.6),
       colour: COLOURS.includes(st.colour) ? st.colour : 'white',
       caps: st.caps !== false,
       formation: st.formation === 'together' ? 'together' : 'one',
@@ -421,8 +422,8 @@
     const gw = Math.max(0.4 * p, SQ_W * p - (p * d.colRate) / 60), gh = SQ_H * p;
     let j, lit;
     if (d.hold) { j = Math.floor(u); lit = true; }
-    else if (d.rtl) { j = Math.ceil(u) - 1; lit = (j + 1 - u) < DUTY; }
-    else { j = Math.floor(u); lit = (u - j) < DUTY; }
+    else if (d.rtl) { j = Math.ceil(u) - 1; lit = (j + 1 - u) < (d.duty || DUTY); }
+    else { j = Math.floor(u); lit = (u - j) < (d.duty || DUTY); }
     const dots = trace ? [] : null;
     if (lit) {
       x.globalAlpha = d.alpha;
@@ -595,7 +596,7 @@
         const du = (sch.colRate * (now - s.start)) / 1000;
         const u = s.rtl ? s.u0 - du : s.u0 + du;
         const dr = drawStrip({ cols: s.cols, cell: s.cell, cellBase: s.cellBase, lineCols: s.lineCols, rows: sch.rows, pitch: R.pitch,
-          light: sch.light, colour: sch.st.colour, colRate: sch.colRate, dtMs: frameDt, alpha: level(), band: R.band, li: s.li, rtl: !!s.rtl }, u, !!api.trace);
+          light: sch.light, colour: sch.st.colour, colRate: sch.colRate, dtMs: frameDt, alpha: level(), band: R.band, li: s.li, rtl: !!s.rtl, duty: sch.st.duty }, u, !!api.trace);
         R.lastDraw = Object.assign(dr, { now, real, li: s.li, wall: Date.now() });
         key = 'strip';
         if (R.segLogged !== s.li) { R.segLogged = s.li; log.push({ ev: 'seg', li: s.li, due: s.start, serverT: real, now, wall: Date.now(), run: run.id }); }
@@ -691,7 +692,7 @@
     dot: $('dot'), here: $('here'), sync: $('sync'), chNum: $('chNum'), chName: $('chName'), text: $('text'), textNote: $('textNote'),
     sign: $('sign'), pv: $('pv'), pvRows: $('pvRows'), spVal: $('spVal'), spWalk: $('spWalk'), spDown: $('spDown'), spUp: $('spUp'),
     fOne: $('fOne'), fTog: $('fTog'), partRow: $('partRow'), partSeg: $('partSeg'),
-    dirSeg: $('dirSeg'), fontSeg: $('fontSeg'), lightSeg: $('lightSeg'),
+    dirSeg: $('dirSeg'), dutySeg: $('dutySeg'), spInfo: $('spInfo'), fontSeg: $('fontSeg'), lightSeg: $('lightSeg'),
     gap: $('gap'), colour: $('colour'), caps: $('caps'), size: $('size'), level: $('level'),
     start: $('startBtn'), test: $('testBtn'), testNote: $('testNote'), runRow: $('runRow'), rejoin: $('rejoinBtn'), stop: $('stopBtn'), startNote: $('startNote'),
     conduct: $('conductBtn'), name: $('name'), shareUrl: $('shareUrl'), qr: $('qr'), toast: $('toast'),
@@ -764,7 +765,7 @@
     setIfIdle(el.gap, st.gap); setIfIdle(el.colour, st.colour);
     if (document.activeElement !== el.caps) el.caps.checked = st.caps;
     const shared = [el.fOne, el.fTog, el.gap, el.colour, el.caps, el.spDown, el.spUp,
-      ...el.dirSeg.children, ...el.fontSeg.children, ...el.lightSeg.children];
+      ...el.dirSeg.children, ...el.dutySeg.children, ...el.fontSeg.children, ...el.lightSeg.children];
     shared.forEach((x) => x.disabled = !!other);
     renderSpeed(st, L);
     renderPreview(st, L);
@@ -775,8 +776,11 @@
   function renderSpeed(st, L) {
     setText(el.spVal, st.speed.toFixed(1));
     const p = pitchFor(rowsFor(st, L), st.formation === 'together');
-    const cm = st.speed * FONT[st.font].cc * p * MM_PER_PX / 10;
+    const cc = FONT[st.font].cc, cm = st.speed * cc * p * MM_PER_PX / 10;
+    const letterCm = cc * p * MM_PER_PX / 10, colMs = 1000 / (st.speed * cc);
     setText(el.spWalk, `Walk about ${Math.round(cm)} cm a second.`);
+    setText(el.spInfo, `1 letter = ${Math.round(1000 / st.speed)} ms and ${letterCm.toFixed(0)} cm wide · each dot column ${Math.round(colMs)} ms, lit ${Math.round(colMs * st.duty)} ms`);
+    press(el.dutySeg, String(st.duty));
   }
   // the preview: each line as the photo shows it, and its length and time on this phone
   const fmtM = (cols, p) => (cols * p * MM_PER_PX / 1000).toFixed(1);
@@ -915,7 +919,7 @@
   el.fOne.addEventListener('click', () => setSetting('formation', 'one'));
   el.fTog.addEventListener('click', () => setSetting('formation', 'together'));
   const segWire = (box, k, conv) => Array.from(box.children).forEach((b) => b.addEventListener('click', () => setSetting(k, conv ? conv(b.dataset.v) : b.dataset.v)));
-  segWire(el.dirSeg, 'dir'); segWire(el.fontSeg, 'font'); segWire(el.lightSeg, 'light', Number);
+  segWire(el.dirSeg, 'dir'); segWire(el.dutySeg, 'duty', Number); segWire(el.fontSeg, 'font'); segWire(el.lightSeg, 'light', Number);
   el.gap.addEventListener('change', () => setSetting('gap', clampInt(el.gap.value, 0, 30, 3), 300));
   el.colour.addEventListener('change', () => setSetting('colour', el.colour.value));
   el.caps.addEventListener('change', () => setSetting('caps', el.caps.checked));
@@ -924,7 +928,8 @@
   function stepSpeed(dir) {
     if (!S) return;
     const cur = normSettings(S.settings).speed;
-    const v = Math.min(5, Math.max(0.5, Math.round((cur + dir * 0.1) * 10) / 10));
+    const step = cur <= 1 ? 0.1 : 0.1;
+    const v = Math.min(5, Math.max(0.2, Math.round((cur + dir * step) * 10) / 10));
     if (v !== cur) setSetting('speed', v, 400);
   }
   [[el.spDown, -1], [el.spUp, 1]].forEach(([b, dir]) => {

@@ -210,10 +210,10 @@ try {
     ok(c1.settings.speed === 5 && c1.settings.gap === 30 && c1.settings.light === 4 && c1.settings.dir === "alt"
       && c1.settings.font === "dot7" && c1.settings.dots === "square" && c1.settings.colour === "white" && !("bpm" in c1.settings),
       "sweep settings clamped, bad fields ignored");
-    const cl2 = s2.next((m) => m.t === "state" && m.settings.speed === 0.5);
+    const cl2 = s2.next((m) => m.t === "state" && m.settings.speed === 0.2);
     s.send({ t: "settings", settings: { speed: 0.01, gap: -4, light: 0 } });
     const c2 = await cl2;
-    ok(c2.settings.speed === 0.5 && c2.settings.gap === 0 && c2.settings.light === 1, "sweep settings clamped low");
+    ok(c2.settings.speed === 0.2 && c2.settings.gap === 0 && c2.settings.light === 1, "sweep settings clamped low");
     const cl3 = s2.next((m) => m.t === "state" && m.settings.speed === 2.3);
     s.send({ t: "settings", settings: { speed: 2.345, dir: "rtl", font: "vga16", dots: "square", light: 2, formation: "together", gap: 3 } });
     const c3 = await cl3;
