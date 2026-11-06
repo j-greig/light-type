@@ -37,8 +37,8 @@
 
   // channels 1 and 2 are fixed; their words are built in so a phone with no signal still has them
   const FIXED = {
-    1: 'I FEEL MYSELF THINKING\nI THINK MYSELF FEELING ༼つ◕‿◕‿◕༽つ',
-    2: 'I FEEL MYSELF THINKING\nI THINK MYSELF FEELING',
+    1: 'I FEEL MYSELF THINKING\nI THINK MYSELF FEELING',
+    2: 'I FEEL MYSELF THINKING\nI THINK MYSELF FEELING\nI AM MYSELF BECOMING',
   };
   const DEFAULT_SETTINGS = { bpm: 60, flash: 160, colour: 'white', caps: true, walkback: 10, formation: 'one' };
   // the last state seen for a channel, kept on the phone so it opens with no signal
@@ -571,7 +571,7 @@
   }
   function renderChannel() {
     if (document.activeElement !== el.chNum) el.chNum.value = String(ch);
-    el.chName.textContent = ch === 1 ? 'THE VERSE, SIGNED' : ch === 2 ? 'THE VERSE' : 'OPEN CHANNEL';
+    el.chName.textContent = ch === 1 ? 'THE VERSE' : ch === 2 ? 'THE VERSE, THREE LINES' : 'OPEN CHANNEL';
     const url = `${location.host}/simple/?ch=${ch}`;
     el.shareUrl.textContent = url;
     renderQR(`${location.origin}/simple/?ch=${ch}`);

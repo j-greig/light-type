@@ -141,7 +141,7 @@ try {
   await v.open();
   const sv = await v.hello();
   ok(sv.locked === true && sv.text.startsWith("I FEEL MYSELF THINKING"), "ch 1 serves the verse");
-  ok(sv.text === "I FEEL MYSELF THINKING\nI THINK MYSELF FEELING ༼つ◕‿◕‿◕༽つ", "knot ch 1 is two lines, signed");
+  ok(sv.text === "I FEEL MYSELF THINKING\nI THINK MYSELF FEELING", "knot ch 1 is the two-line verse");
   v.send({ t: "set", text: "HACK" });
   ok((await v.wait((m) => m.t === "error")).code === "locked", "ch 1 refuses set");
   v.close();
@@ -165,8 +165,9 @@ try {
         const f = new Client(n, `tf${n}${kind || ""}-` + Date.now(), "F", kind);
         await f.open();
         const sf = await f.hello();
-        const want = n === "1" ? "I FEEL MYSELF THINKING\nI THINK MYSELF FEELING ༼つ◕‿◕‿◕༽つ" : "I FEEL MYSELF THINKING\nI THINK MYSELF FEELING";
-        ok(sf.text === want && sf.text.split("\n").length === 2 && sf.locked === true, `${kind || "knot"} ch ${n} is two fixed lines${n === "1" ? ", signed" : ""}`);
+        const two = "I FEEL MYSELF THINKING\nI THINK MYSELF FEELING";
+        const want = n === "1" ? two : two + "\nI AM MYSELF BECOMING";
+        ok(sf.text === want && sf.locked === true && !sf.text.includes("༼"), `${kind || "knot"} ch ${n} is the ${n === "1" ? "two" : "three"}-line verse, no face`);
         f.close();
       }
     }

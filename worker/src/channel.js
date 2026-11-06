@@ -1,9 +1,9 @@
 import { DurableObject } from "cloudflare:workers";
 
-const SIGN = "༼つ◕‿◕‿◕༽つ";
-const VERSE = "I FEEL MYSELF THINKING\nI THINK MYSELF FEELING";
-// fixed channels, the same on both kinds: 1 = the verse signed with the face, 2 = the same verse unsigned
-const FIXED = { 1: VERSE + " " + SIGN, 2: VERSE };
+const VERSE_TWO = "I FEEL MYSELF THINKING\nI THINK MYSELF FEELING";
+const VERSE_THREE = VERSE_TWO + "\nI AM MYSELF BECOMING";
+// fixed channels, the same on both kinds: 1 = the two-line verse, 2 = the three-line verse
+const FIXED = { 1: VERSE_TWO, 2: VERSE_THREE };
 const COLOURS = ["white", "warm", "yellow", "cyan", "magenta", "cycle"];
 const FORMATIONS = ["one", "together"];
 // knot channels (DO "ch-N", the app at /simple)
