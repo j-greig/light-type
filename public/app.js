@@ -1173,6 +1173,7 @@
     schedule: (run, part) => buildSchedule(run, part || 0),
     glyph, rasterLine, testLine, pitchFor, normSettings, nextMinute,
     get vgaReady() { return vgaReady; }, get vgaMetric() { return vgaMetric; },
+    checkUpdate: () => (swReg ? swReg.update() : Promise.resolve()), idle: () => idle(),
   };
 
   { const d = new Date(Date.now() + 10 * 60000); d.setMinutes(Math.ceil(d.getMinutes() / 5) * 5, 0, 0);
