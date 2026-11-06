@@ -6,7 +6,7 @@
 // Screens: INSTALL (browser tab on a phone) -> CHECK (once per phone) -> DIAL -> RUN (the stage).
 'use strict';
 (() => {
-  const BUILD = '2026-11-06a';   // the same stamp is in sw.js; scripts/stamp.mjs sets both
+  const BUILD = '2026-11-06-1749';   // the same stamp is in sw.js; scripts/stamp.mjs sets both
   const $ = (id) => document.getElementById(id);
   // write text only when it changes: WebKit drops a tap on a button whose text node is replaced mid-tap
   const setText = (node, v) => { v = String(v); if (node.textContent !== v) node.textContent = v; };
