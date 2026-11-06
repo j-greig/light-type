@@ -1,11 +1,23 @@
 # Light Type sync protocol
 
-One Cloudflare Worker serves the app (`public/`, Workers static assets) and the socket
-`GET /ws?ch=<n>`. Each channel is one Durable Object (`Channel`, id from name `ch-<n>`),
-SQLite-backed, using the WebSocket Hibernation API (`ctx.acceptWebSocket`).
+One Cloudflare Worker serves the apps (`public/`, Workers static assets) and the socket. Each channel is one
+Durable Object (`Channel`), SQLite-backed, using the WebSocket Hibernation API (`ctx.acceptWebSocket`).
 
-Channels are `1`..`99`. Channels `1` and `2` are fixed by the server and cannot be changed: `1` is THE VERSE signed
-with the face ༼つ◕‿◕‿◕༽つ, `2` is the same verse unsigned. Every other channel is open: anyone on it can set its text.
+There are two kinds of channel with separate namespaces, so a run, text or setting on one never reaches the other:
+
+| kind | app | socket | Durable Object name |
+|---|---|---|---|
+| `knot` | `/simple/` (one letter per step) | `GET /ws?ch=<n>` | `ch-<n>` |
+| `sweep` | `/` (the dot-matrix strip) | `GET /ws?ch=<n>&kind=sweep` | `sw-<n>` |
+
+`GET /api/state?ch=<n>` and `GET /api/state?ch=<n>&kind=sweep` work the same way. The DO stores `kind` in its
+state on first init. Everything below the "Sweep channels" section describes knot channels; sweep channels share
+it except where that section says otherwise.
+
+Channels are `1`..`99`. Channels `1` and `2` are fixed by the server on both kinds and cannot be changed: `1` is
+the two-line verse `I FEEL MYSELF THINKING / I THINK MYSELF FEELING`, `2` is the same verse with a third line
+`I AM MYSELF BECOMING`. The server rewrites the fixed text on every load. Every other channel is open: anyone on
+it can set its text.
 
 All times are server epoch milliseconds. Every message is one JSON object with a `t` field.
 
@@ -14,6 +26,7 @@ All times are server epoch milliseconds. Every message is one JSON object with a
 ```json
 {
   "ch": 3,
+  "kind": "knot",
   "text": "I FEEL MYSELF THINKING\nI THINK MYSELF FEELING",
   "locked": false,
   "settings": { "bpm": 60, "flash": 160, "colour": "white", "caps": true, "walkback": 10,
@@ -40,8 +53,8 @@ All times are server epoch milliseconds. Every message is one JSON object with a
   `startAt-5000 .. startAt`. The run snapshot copies `text` and `settings`, so edits during a
   run do not change it.
 
-Channels 1 and 2 seed `text` with the verse (2 without the face), `locked: true`. Other channels seed
-`text: "LIGHT TYPE"`, `locked: false`.
+Channels 1 and 2 seed `text` with the verse (two lines on 1, three lines on 2), `locked: true`. Other channels
+seed `text: "LIGHT TYPE"`, `locked: false`.
 
 ## Client to server
 
@@ -118,7 +131,7 @@ No flaw in the contract; these clarify what the server does.
 - The run ends at `startAt + 1000 + (last glyph time) + one beat + 400 + flash + 500 ms` (slack). When it ends the server clears `run` and broadcasts a `state` (not a `stop`).
 - A conductor with no open socket for 30 min is released automatically, with a `state` broadcast. Reconnecting with the same id before then keeps the baton.
 - `GET /api/state?ch=N` returns the channel state plus `now` and `here`.
-- The Worker runs first for every request (`run_worker_first`), so `/`, `/index.html`, `/sw.js`, `/manifest.webmanifest` carry `Cache-Control: no-cache`.
+- The Worker runs first for every request (`run_worker_first`), so `/`, `/index.html`, `/sw.js`, `/manifest.webmanifest`, `/simple`, `/simple/`, `/simple/index.html` and `/simple/manifest.webmanifest` carry `Cache-Control: no-cache`.
 
 ## Scheduled and offline runs (client)
 
@@ -130,3 +143,71 @@ No flaw in the contract; these clarify what the server does.
   the same minute line up without a network.
 - With no signal, START runs on this phone only, from the cached or locally edited text. Channels 1
   and 2 have their text built into the client.
+
+## Sweep channels
+
+### State
+
+As above, with `kind: "sweep"` and these settings (defaults shown):
+
+```json
+{ "speed": 2, "dir": "alt", "gap": 3, "font": "dot7", "dots": "round", "light": 1,
+  "colour": "white", "caps": true, "formation": "one" }
+```
+
+- `speed` letters a second, 0.5..5, rounded to 0.1.
+- `dir` `ltr | rtl | alt`. `alt`: line 1 left to right, line 2 right to left, line 3 left to right (as the
+  camera sees it).
+- `gap` seconds between lines in `formation: "one"`, 0..30.
+- `font` `dot7` (cells 6 columns x 7 rows, 8 rows when a glyph in the run has a descender) or `vga16` (cells 9 x 16).
+- `dots` `round | square`. `light` 1..4: the strip width in columns.
+- `colour`, `caps`, `formation` as on knot channels.
+
+Unknown or invalid fields are ignored, numbers clamped. Every change is saved in the DO and broadcast as `state`,
+so a change by anyone on the channel is the setting for every phone on it (last write wins; a conductor locks it).
+
+### Start
+
+`start` takes `dur`: ms from `startAt` to the end tone, computed by the client from the schedule below. The run
+snapshot carries it: `run = { id, startAt, text, settings, dur }`. The server holds the run until
+`startAt + clamp(dur, 2000, 1200000) + 1500`. Without `dur` it uses
+`1000 + graphemes * 1000 / speed + lines * gap * 1000 + 2000`. `at` works as on knot channels.
+
+### Schedule (identical on every phone)
+
+```
+cellCols = 6 (dot7) or 9 (vga16);  glyph columns 5 or 9
+lineCols = cells * cellCols - (cellCols - glyph columns)     (no blank column after the last cell)
+colRate  = speed * cellCols                                   (columns a second)
+lineDur  = (lineCols + light) / colRate                       (the strip starts and ends fully off the line)
+t0       = startAt + 1000
+one      line L starts at t0 + sum over k<L of (lineDur_k + gap)
+together every line starts at t0; a phone draws only its part line
+u        the fractional column at the strip centre; column j's centre passes it at u = j + 0.5
+         ltr: u runs -light/2 .. lineCols + light/2;  rtl: the reverse
+end      last line end + 400 ms: the end tone; the screen stays black 6 s after it
+dur      end - startAt
+```
+
+Cues: countdown 5..1 at 880 Hz, GO 440 Hz long at `startAt`, a soft sine tick as the strip reaches each cell
+(ltr at its left edge, rtl at its right ink edge; letter 1400 Hz, space 520 Hz, face glyph 1000 Hz), the
+three-note chime at each line end except the last, two 880 Hz blips one cell-beat (`1 / speed` s) apart before
+each later line when `gap` is at least two cell-beats, the two-note end tone.
+
+### Drawing (per phone)
+
+- Letter band: inside the safe area (clear of the status bar and the home bar). `pitch = band height * letter
+  height % / rows`. In `together` every phone uses the pitch of an iPhone SE band (647 CSS px) or its own, whichever
+  is smaller, so every line has the same length.
+- Each frame (half-frame look-ahead): `x = cx + (j + 0.5 - u) * pitch`, `y = top + (r + 0.5) * pitch` for the lit
+  dots of columns near `u`, clipped to the strip `cx ± light * pitch / 2`, with a feathered edge a quarter pitch wide
+  centred on each side. A strip wider than the screen is cut to the whole columns that fit.
+- Round dots are `0.8 * pitch` tall and `max(0.3, 0.8 - colRate * frame time) * pitch` wide, so a dot printed while
+  the phone moves for one frame comes out round. Square dots are one pitch.
+- Outside the strip the canvas is pure black. Outside a line's time the screen is black.
+
+### TEST
+
+A local run, this phone only, with the countdown, ticks and end tone of a real run at the channel's speed, font,
+dots and light width: one line of 8 squares (side = half the letter rows, alternately top and bottom, a
+checkerboard), one blank cell, then a solid bar 4 cells long. Rows and pitch are those of the channel's words.
