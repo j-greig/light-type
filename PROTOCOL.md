@@ -14,7 +14,7 @@ All times are server epoch milliseconds. Every message is one JSON object with a
 ```json
 {
   "ch": 3,
-  "text": "I FEEL MYSELF THINKING\nI THINK MYSELF FEELING\nI AM MYSELF BECOMING ༼つ◕‿◕‿◕༽つ",
+  "text": "I FEEL MYSELF THINKING\nI THINK MYSELF FEELING",
   "locked": false,
   "settings": { "bpm": 60, "flash": 160, "colour": "white", "caps": true, "walkback": 10,
                 "formation": "one" },

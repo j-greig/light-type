@@ -9,8 +9,8 @@ Phones on the same channel stay in sync. Anyone on a channel presses START: ever
 5 4 3 2 1, then they all flash their letters on the same beat, so one person or a whole group can draw
 into the same exposure.
 
-- **Channel 1** is fixed: *I FEEL MYSELF THINKING / I THINK MYSELF FEELING / I AM MYSELF BECOMING ༼つ◕‿◕‿◕༽つ*. The face at the end is the signature, one glyph per step on close knots a phone-width apart (about 7 cm), so its parts touch in the photo; the phone ticks softly for those steps. On open channels, SIGN IT adds it to the last line.
-- **Channel 2** is the same verse without the face, also fixed.
+- **Channel 1** is fixed: *I FEEL MYSELF THINKING / I THINK MYSELF FEELING*.
+- **Channel 2** is fixed: the same verse with a third line, *I AM MYSELF BECOMING*. On open channels, SIGN IT adds the Wib&Wob face to the last line, one glyph per step on close knots a phone-width apart.
 - **Channels 3-99** are open: anyone on the channel can write the line.
 - **One walker**: lines play one after another, with time between them to walk back in the dark.
 - **Together**: one walker per line, all lines at once, each phone held at its own height.

@@ -2,9 +2,9 @@ import { DurableObject } from "cloudflare:workers";
 
 const SIGN = "༼つ◕‿◕‿◕༽つ";
 const VERSE_PLAIN = "I FEEL MYSELF THINKING\nI THINK MYSELF FEELING\nI AM MYSELF BECOMING";
-const VERSE = VERSE_PLAIN + " " + SIGN;
-// fixed channels: 1 = the verse signed with the face, 2 = the same verse unsigned
-const FIXED = { 1: VERSE, 2: VERSE_PLAIN };
+const VERSE_TWO = "I FEEL MYSELF THINKING\nI THINK MYSELF FEELING";
+// fixed channels: 1 = the two-line verse, 2 = the three-line verse
+const FIXED = { 1: VERSE_TWO, 2: VERSE_PLAIN };
 const COLOURS = ["white", "warm", "yellow", "cyan", "magenta", "cycle"];
 const FORMATIONS = ["one", "together"];
 const DEFAULT_SETTINGS = { bpm: 60, flash: 160, colour: "white", caps: true, walkback: 10, formation: "one" };

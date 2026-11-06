@@ -1,7 +1,7 @@
 // Light Type service worker: the app shell, network-first.
 // A redeploy is picked up on the next launch with signal; with no signal the cached shell opens.
 // The socket (/ws) and the API (/api) are never cached.
-const CACHE = 'light-type-shell-v5';
+const CACHE = 'light-type-shell-v6';
 const SHELL = [
   '/', '/index.html', '/app.js', '/style.css', '/manifest.webmanifest',
   '/vendor/qrcode.js', '/wake.mp4', '/fonts/Px437_IBM_VGA_9x16.ttf',
