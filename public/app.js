@@ -46,7 +46,7 @@
     1: 'I FEEL MYSELF THINKING\nI THINK MYSELF FEELING',
     2: 'I FEEL MYSELF THINKING\nI THINK MYSELF FEELING\nI AM MYSELF BECOMING',
   };
-  const COLOURS = ['white', 'warm', 'yellow', 'cyan', 'magenta', 'cycle'];
+  const COLOURS = ['white', 'warm', 'yellow', 'cyan', 'magenta', 'cycle', 'tint'];
   const DEFAULT_SETTINGS = { speed: 2, dir: 'alt', gap: 3, font: 'dot7', dots: 'round', light: 1, colour: 'white', caps: true, formation: 'one' };
   // the same clamping as the server, so a bad cached state cannot break a run
   function normSettings(st) {
@@ -65,7 +65,7 @@
   }
   function cachedState(c) {
     const s = store.get('state.' + c, null);
-    const base = { ch: c, kind: 'sweep', text: FIXED[c] || 'LIGHT TYPE', locked: !!FIXED[c], settings: Object.assign({}, DEFAULT_SETTINGS), conductor: null, run: null };
+    const base = { ch: c, kind: 'sweep', text: FIXED[c] || 'LIGHT TYPE', locked: !!FIXED[c], settings: Object.assign({}, DEFAULT_SETTINGS, FIXED[c] ? { colour: 'tint' } : {}), conductor: null, run: null };
     const out = Object.assign(base, s || {}, { cached: true });
     if (FIXED[c]) { out.text = FIXED[c]; out.locked = true; }
     return out;
@@ -142,7 +142,8 @@
         if (!synced && typeof m.now === 'number') offset = m.now - Date.now();
         if (typeof m.here === 'number') here = m.here;
         if (m.you) you = m.you;
-        if (textLocal()) m.text = el.text.value;
+        if (FIXED[ch]) { m.text = FIXED[ch]; m.locked = true; if (m.run) m.run.text = FIXED[ch]; }
+        else if (textLocal()) m.text = el.text.value;
         S = m;
         // a setting changed here and not yet sent stays on screen
         if (Object.keys(stPending).length) S.settings = Object.assign({}, S.settings, stPending);
@@ -152,7 +153,9 @@
         break;
       }
       case 'pong': onPong(m); break;
-      case 'run': if (S) { S.run = m.run; saveState(); } syncRun(m.run); renderDial(); break;
+      case 'run':
+        if (m.run && FIXED[ch]) m.run.text = FIXED[ch];
+        if (S) { S.run = m.run; saveState(); } syncRun(m.run); renderDial(); break;
       case 'stop': if (S) { S.run = null; saveState(); } pending = null; remoteStop(); renderDial(); break;
       case 'here': here = m.here; renderPresence(); break;
       case 'error': onError(m); break;
@@ -372,7 +375,9 @@
   // ------------------------------------------------------------------ drawing
   const EGA = { white: '#ffffff', warm: '#ffd7a0', yellow: '#ffff55', cyan: '#55ffff', magenta: '#ff55ff' };
   const CYCLE = ['#ffffff', '#55ffff', '#ff55ff', '#ffff55', '#55ff55', '#5555ff', '#ff5555'];
-  const colourFor = (name, i) => name === 'cycle' ? CYCLE[i % CYCLE.length] : (EGA[name] || '#ffffff');
+  // tint: line 1 warm near-white, line 2 cool near-white, line 3 warm again
+  const TINT = ['#ffedd5', '#e2eeff'];
+  const colourFor = (name, i, li) => name === 'cycle' ? CYCLE[i % CYCLE.length] : name === 'tint' ? TINT[(li || 0) % 2] : (EGA[name] || '#ffffff');
   const stage = $('stage'), gc = $('gc');
   let stageW = 0, stageH = 0;
   function sizeStage() {
@@ -421,7 +426,7 @@
       const rs = d.cols[j];
       if (!rs) continue;
       const xc = cx + (j + 0.5 - u) * p;
-      x.fillStyle = colourFor(d.colour, d.cellBase + d.cell[j]);
+      x.fillStyle = colourFor(d.colour, d.cellBase + d.cell[j], d.li);
       x.beginPath();
       for (const r of rs) {
         const yc = top + (r + 0.5) * p;
@@ -487,12 +492,15 @@
   };
   // map server ms -> AudioContext seconds, so a cue is heard on its beat
   let map = null;
+  // during a run, time comes from performance.now() anchored at the run's start, so a Date.now() step or a new
+  // clock sample does not move the strip; it is re-anchored only when it drifts 25 ms from serverNow()
+  const clockNow = () => (R && R.clk ? R.clk.s0 + performance.now() - R.clk.p0 : serverNow());
   function makeMap() {
     const a = ac; if (!a) return null;
-    let ctxT = a.currentTime, srvT = serverNow();
+    let ctxT = a.currentTime, srvT = clockNow();
     try {
       const ts = a.getOutputTimestamp && a.getOutputTimestamp();
-      if (ts && ts.contextTime > 0 && ts.performanceTime > 0) { ctxT = ts.contextTime; srvT = serverNow() - (performance.now() - ts.performanceTime); }
+      if (ts && ts.contextTime > 0 && ts.performanceTime > 0) { ctxT = ts.contextTime; srvT = clockNow() - (performance.now() - ts.performanceTime); }
       else if (a.outputLatency) { srvT += a.outputLatency * 1000; }
     } catch (e) {}
     return { ctxT, srvT };
@@ -544,11 +552,12 @@
     const sch = buildSchedule(run, part);
     prepareDraw(sch);
     audio(); keepAwake();
-    map = makeMap();
     const now = serverNow();
     let cue = 0; while (cue < sch.ev.length && sch.ev[cue].at < now - 60) cue++;   // late join: skip cues already past
     const tok = {};
-    R = { run, sch, part, cue, si: 0, key: null, lastMapCheck: 0, tok, tailUntil: 0, segLogged: -1, pitch: 0, lastDraw: null };
+    R = { run, sch, part, cue, si: 0, key: null, lastMapCheck: 0, tok, tailUntil: 0, segLogged: -1, pitch: 0, lastDraw: null,
+      clk: { p0: performance.now(), s0: now } };
+    map = makeMap();
     mode = 'run';
     if (run.test) testedOnce = true;
     hideOverlays();
@@ -565,7 +574,11 @@
     const pnow = performance.now();
     if (lastFrameAt) { const d = pnow - lastFrameAt; if (d > 4 && d < 50) frameDt = frameDt * 0.9 + d * 0.1; }
     lastFrameAt = pnow;
-    const real = serverNow(), now = real + Math.min(8, frameDt / 2), sch = R.sch, run = R.run;
+    {
+      const drift = serverNow() - clockNow();
+      if (Math.abs(drift) > 25) { R.clk = { p0: performance.now(), s0: serverNow() }; map = makeMap(); log.push({ ev: 'reanchor', drift, run: R.run.id }); }
+    }
+    const real = clockNow(), now = real + Math.min(8, frameDt / 2), sch = R.sch, run = R.run;
     if (R.tailUntil) {
       if (R.key !== 'black') { blank(); R.key = 'black'; }
       if (real >= R.tailUntil) { finishRun(); return; }
@@ -583,7 +596,7 @@
         const du = (sch.colRate * (now - s.start)) / 1000;
         const u = s.rtl ? s.u0 - du : s.u0 + du;
         const dr = drawStrip({ cols: s.cols, cell: s.cell, cellBase: s.cellBase, lineCols: s.lineCols, rows: sch.rows, pitch: R.pitch,
-          light: sch.light, colour: sch.st.colour, dots: sch.st.dots, colRate: sch.colRate, dtMs: frameDt, alpha: level(), band: R.band }, u, !!api.trace);
+          light: sch.light, colour: sch.st.colour, dots: sch.st.dots, colRate: sch.colRate, dtMs: frameDt, alpha: level(), band: R.band, li: s.li }, u, !!api.trace);
         R.lastDraw = Object.assign(dr, { now, real, li: s.li, wall: Date.now() });
         key = 'strip';
         if (R.segLogged !== s.li) { R.segLogged = s.li; log.push({ ev: 'seg', li: s.li, due: s.start, serverT: real, now, wall: Date.now(), run: run.id }); }
@@ -624,11 +637,11 @@
     if (R) { leftRunId = R.run.id; stopAllTones(); log.push({ ev: 'left', run: R.run.id, serverT: serverNow() }); R = null; backToDial(); }
   }
   function backToDial() { hideStage(); mode = 'dial'; renderDial(); renderTurn(); }
-  // the server holds a run until startAt + dur + 1500 ms: match it so START is not refused
+  // the server holds a run through the black tail, until startAt + dur + 6500 ms: match it so START is not refused
   function runActive() {
     if (!S || !S.run) return false;
     const end = Number.isFinite(S.run.dur) ? S.run.startAt + S.run.dur : runEnd(S.run);
-    return serverNow() < end + 1600;
+    return serverNow() < end + 6600;
   }
 
   // stage input: a walker's thumbs rest on the glass, so leaving takes three fingers held for 2 s
@@ -794,7 +807,7 @@
       x.globalAlpha = sch.together && i !== sch.part ? 0.45 : 1;
       for (let j = 0; j < r.lineCols; j++) {
         const rs = r.cols[j]; if (!rs) continue;
-        x.fillStyle = colourFor(st.colour, s.cellBase + r.cell[j]);
+        x.fillStyle = colourFor(st.colour, s.cellBase + r.cell[j], s.li);
         x.beginPath();
         for (const row of rs) {
           const cxp = x0 + (j + 0.5) * pp, cyp = y0 + (row + 0.5) * pp;

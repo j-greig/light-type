@@ -121,6 +121,8 @@
         if (!synced && typeof m.now === 'number') offset = m.now - Date.now();
         if (typeof m.here === 'number') here = m.here;
         if (m.you) you = m.you;
+        // a fixed channel always shows its built-in words, whatever the server sends
+        if (FIXED[ch]) { m.text = FIXED[ch]; m.locked = true; if (m.run) m.run.text = FIXED[ch]; }
         S = m;
         saveState();
         renderDial();
@@ -128,7 +130,7 @@
         break;
       }
       case 'pong': onPong(m); break;
-      case 'run': if (S) { S.run = m.run; saveState(); } syncRun(m.run); renderDial(); break;
+      case 'run': if (m.run && FIXED[ch]) m.run.text = FIXED[ch]; if (S) { S.run = m.run; saveState(); } syncRun(m.run); renderDial(); break;
       case 'stop': if (S) { S.run = null; saveState(); } pending = null; remoteStop(); renderDial(); break;
       case 'here': here = m.here; renderPresence(); break;
       case 'error': onError(m); break;

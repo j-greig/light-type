@@ -12,13 +12,18 @@ const SHELL = [
 ];
 const shellFor = (path) => (path === '/simple' || path.startsWith('/simple/') ? '/simple/' : '/');
 
-// each file on its own, so one failure does not drop the rest; a redirected response is not kept
-// (Safari refuses a navigation answered with one)
+// What both apps need to open with no signal. If one of these fails to load, the install fails and the
+// previous complete release stays in charge (the browser tries again on the next launch).
+const NEEDED = new Set(['/', '/app.js', '/style.css', '/dot7.js', '/simple/', '/simple/app.js', '/simple/style.css',
+  '/vendor/qrcode.js', '/fonts/Px437_IBM_VGA_9x16.ttf']);
+
+// each file on its own, so an optional file (icon, video) failing does not drop the rest; a redirected
+// response is not kept (Safari refuses a navigation answered with one)
 self.addEventListener('install', (e) => {
   e.waitUntil(caches.open(CACHE)
     .then((c) => Promise.all(SHELL.map((u) => fetch(u, { cache: 'reload' })
-      .then((res) => (res.ok && !res.redirected ? c.put(u, res) : null))
-      .catch(() => {}))))
+      .then((res) => { if (res.ok && !res.redirected) return c.put(u, res); throw new Error(u + ' ' + res.status); })
+      .catch((err) => { if (NEEDED.has(u)) throw err; }))))
     .then(() => self.skipWaiting()));
 });
 
